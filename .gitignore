@@ -1,0 +1,10 @@
+.research/
+node_modules/
+dist/
+target/
+*.log
+.env
+.env.*
+__pycache__/
+*.pyc
+!.env.example

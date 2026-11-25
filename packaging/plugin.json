@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "context-lens",
+  "version": "0.1.0",
+  "description": "Read-only local Codex context snapshots with a compact remaining-capacity monitor.",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "Context Lens",
+        "shortDescription": "本地上下文剩余容量监控（只读）",
+        "capabilities": ["Read"]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "context_lens": {
+      "type": "stdio",
+      "command": "./runtime/node.exe",
+      "args": ["${PLUGIN_ROOT}/src/server/mcp.mjs"],
+      "cwd": "./"
+    }
+  }
+}

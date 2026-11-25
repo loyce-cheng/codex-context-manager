@@ -1,0 +1,15 @@
+diff --git a/windows/src/CodexScriptLoader.Interop/ApplicationActivator.cs b/windows/src/CodexScriptLoader.Interop/ApplicationActivator.cs
+--- a/windows/src/CodexScriptLoader.Interop/ApplicationActivator.cs
++++ b/windows/src/CodexScriptLoader.Interop/ApplicationActivator.cs
+@@ -26,6 +26,11 @@ public static class ApplicationActivator
+             throw new ArgumentException("Activation arguments contain invalid control characters.", nameof(arguments));
+         }
+ 
++        if (DesktopAliasActivation.SupportsVersion(package.Version) && DesktopAliasActivation.TryActivate(package.AppUserModelId, arguments, out int pid))
++        {
++            return pid;
++        }
++
+         var type = Type.GetTypeFromCLSID(ActivationManagerClassId, throwOnError: true)
+             ?? throw new InvalidOperationException("Application Activation Manager is unavailable.");
+         var instance = Activator.CreateInstance(type)

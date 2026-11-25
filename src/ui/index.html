@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Context Lens</title><!--STYLE--></head>
+<body><main id="app">
+  <header><span id="mode-label">Context Lens</span><span id="version"></span><span id="connection" role="status"></span><button id="host-mode" type="button" hidden disabled></button></header>
+  <section id="setup"><label for="threads">绑定本地会话</label><select id="threads"><option value="">正在读取…</option></select><button id="bind" type="button">打开监控</button><p>此处为固定模式，不随切换更新。Start.cmd 跟随当前本地对话；Follow-New.cmd 仅跟随启动后新建的对话。请保持启动窗口运行。</p></section>
+  <section id="stage" aria-label="上下文监控">
+    <div id="follow-empty" hidden aria-label="等待自动跟随"><strong>—</strong></div>
+    <div id="meter" hidden>
+      <button id="grip" type="button" aria-label="拖动监控；点击或右击打开菜单" title="拖动 · 右击设置">⠿</button>
+      <div id="rail" role="progressbar" aria-label="上下文剩余容量" aria-valuemin="0" aria-valuemax="100"><div id="fill"></div></div>
+      <div id="thumb" hidden></div>
+      <div id="reading"><small id="phase"></small><strong id="capacity">—</strong><span id="percent">—</span></div>
+      <div id="horizontal-preview" hidden aria-hidden="true"></div>
+      <input id="slider" type="range" min="0" max="1000" step="1" aria-label="按住调整本对话容量" title="按住调整容量">
+    </div>
+    <div id="menu" hidden aria-label="监控菜单">
+      <label id="follow-options" hidden>监控窗口<select id="follow-window"><option value="">自动跟随当前窗口</option></select></label>
+      <button id="resume-follow" type="button" data-action="resume-follow" hidden>返回自动跟随</button>
+      <button type="button" data-action="select">选择会话</button>
+      <button type="button" data-action="details">查看详情</button>
+      <button type="button" data-action="horizontal">横向</button>
+      <button type="button" data-action="vertical">竖向</button>
+      <button type="button" data-action="dock">恢复停靠</button>
+      <button type="button" data-action="fullscreen" hidden>在对话侧面板打开</button>
+      <button type="button" data-action="inline" hidden>返回对话卡片</button>
+      <button type="button" data-action="demo">演示交互</button>
+    </div>
+    <aside id="notice" hidden role="status"><p id="notice-text"></p><button id="notice-action" type="button" hidden>延长一档</button><button id="dismiss" type="button">关闭</button></aside>
+  </section>
+  <section id="details" hidden><h1>当前快照</h1><dl id="facts"></dl><p id="limitations"></p><button id="details-close" type="button">收起</button></section>
+  <footer id="status" aria-live="polite">读取已有统计，不调用模型。</footer>
+</main><!--SCRIPT--></body></html>
