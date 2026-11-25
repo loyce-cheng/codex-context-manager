@@ -187,6 +187,9 @@ npm test
 # 只读检查本机桌面、Loader 与页面兼容状态
 npm run check:desktop-compat
 
+# 用已安装的官方后台运行隔离恢复和压缩测试
+npm run verify:stock-resume
+
 # 构建左栏扩展目录与独立导入 ZIP
 npm run build:sidebar
 python scripts/package-sidebar.py
@@ -194,6 +197,8 @@ python scripts/package-sidebar.py
 # 编译无控制台 Windows 启动器与恢复工具
 pwsh -File scripts/build-launcher.ps1
 ```
+
+在当前开发源码中，实验快捷方式遇到未验收的更新时，会先打开普通监控，再用本机模拟对话检查官方后台。测试覆盖同一对话调档、另一个对话保持原容量、冷启动恢复以及自动压缩。结果按桌面版本、官方后台文件 SHA-256 和测试版本缓存；换版本或后台文件变化后会重新检查。未能确认时隔天可自动重试，手动立即重跑可用 `npm run verify:stock-resume -- --force`。结果保存在 `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`。此检查使用临时资料目录，模拟回合在本机完成。通过后仅说明官方后台支持这些操作，真实桌面的左栏接入仍在开发中。`v0.1.0` 安装包不含此检查。
 
 更多文档：
 - 本次源码审查与修复范围：[0.1.0 审查记录](docs/REVIEW-0.1.0.md)

@@ -2,7 +2,7 @@ import {resolve} from 'node:path';
 
 // A packaged desktop may update independently of both the backend and Loader.
 // Only report a successful fallback after the normal launcher's readiness check.
-export async function startMonitorAfterUpdate({version,reason,env,experimentalBinary,start,save,waitForExit}){
+export async function startMonitorAfterUpdate({version,reason,env,experimentalBinary,start,save,waitForExit,checkStockResume}){
   const monitorEnv={...env};
   for (const [key,value] of Object.entries(monitorEnv)) {
     const name=key.toUpperCase();
@@ -24,5 +24,9 @@ export async function startMonitorAfterUpdate({version,reason,env,experimentalBi
   const readingReady=report.ready || report.stage==='space-unavailable';
   await save({stage:'monitor-only',appVersion:version,reason,bridgeStarted:false,monitorStage:report.stage,readingReady});
   const message=report.ready?'普通左栏已读取当前对话容量。':report.notice;
+  if(checkStockResume){
+    try{return message+await checkStockResume(version);}
+    catch{return message+' 未能完成官方后台兼容检查，已保留本对话的预设。';}
+  }
   return message+reason+' 更新后的单对话扩容尚待验证，原有档位已保留。';
 }

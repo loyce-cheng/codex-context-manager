@@ -187,6 +187,9 @@ npm test
 # Read-only desktop, Loader, and page compatibility check
 npm run check:desktop-compat
 
+# Run isolated resume and compaction tests against the installed stock backend
+npm run verify:stock-resume
+
 # Build sidebar bundle and standalone import ZIP
 npm run build:sidebar
 python scripts/package-sidebar.py
@@ -194,6 +197,8 @@ python scripts/package-sidebar.py
 # Compile windowless Windows launchers and recovery tool
 pwsh -File scripts/build-launcher.ps1
 ```
+
+In the development source, when an update falls outside the verified experimental combinations, the experimental shortcut opens monitoring first and then checks the stock backend with local simulated chats. The check covers per-chat adjustment, an unchanged control chat, cold resume and automatic compaction. Results are cached by desktop version, backend SHA-256 and test revision. An inconclusive result is retried after 24 hours or immediately with `npm run verify:stock-resume -- --force`. The summary lives in `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`. Test turns run locally in a temporary profile. Passing confirms backend behavior only. Desktop sidebar integration is still in development. The published `v0.1.0` installer predates this check.
 
 Additional documentation:
 

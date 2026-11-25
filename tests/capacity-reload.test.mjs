@@ -21,13 +21,18 @@ test('host-initiated resume retains pagination and permission choices; mismatche
 });
 test('passive resume reads only this chat/model target and leaves ordinary restores intact',()=>{
   const prefs=new Map([[targetPreferenceKey(A,model.slug),'512000']]);
-  const snapshot={host:'local',threadId:A,model:model.slug,capacity:258400,used:120000};
-  const context={snapshot,model,threadMetadata:{id:A},readPreference:key=>prefs.get(key)};
+  const snapshot={host:'local',threadId:A,model:model.slug,modelProvider:'fixture',capacity:258400,used:120000};
+  const threadMetadata={id:A,model:model.slug,modelProvider:'fixture',ephemeral:false,status:{type:'notLoaded'}};
+  const context={snapshot,model,threadMetadata,readPreference:key=>prefs.get(key)};
   const params={threadId:A,excludeTurns:true,config:{model_reasoning_effort:'low'}};
   assert.deepEqual(resumeWithSavedTarget(params,context).config,{model_reasoning_effort:'low',
     model_context_window:512000,model_auto_compact_token_limit:462080,model_auto_compact_token_limit_scope:'total'});
   const other={threadId:B};assert.equal(resumeWithSavedTarget(other,{...context,snapshot:{...snapshot,threadId:B},threadMetadata:{id:B}}),other);
   const explicit={...params,config:{model_context_window:384000}};assert.equal(resumeWithSavedTarget(explicit,context),explicit);
+  for (const changes of [{status:{type:'idle'}},{ephemeral:true},{model:'different'},{modelProvider:'different'}]) {
+    assert.equal(resumeWithSavedTarget(params,{...context,threadMetadata:{...threadMetadata,...changes}}),params);
+  }
+  assert.equal(resumeWithSavedTarget(params,{...context,readPreference:()=>String(model.context_window)}),params);
   for(const invalid of [{snapshot:null},{model:null},{threadMetadata:{id:B}},{snapshot:{...snapshot,used:490000}},
     {snapshot:{...snapshot,host:'remote'}},{readPreference:()=>{throw Error('storage unavailable');}},{readPreference:()=>999999}]){
     assert.equal(resumeWithSavedTarget(params,{...context,...invalid}),params);

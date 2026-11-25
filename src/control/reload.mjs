@@ -56,10 +56,14 @@ export function resumeWithCapacity(params, plan, resolved) {
 // cannot be checked, preserve the exact native request and its defaults.
 export function resumeWithSavedTarget(params,{snapshot,model,threadMetadata,readPreference}) {
   if (!ID.test(params?.threadId??'') || !snapshot || snapshot.host!=='local' || snapshot.threadId!==params.threadId ||
-      snapshot.model!==model?.slug || threadMetadata?.id!==params.threadId) return params;
+      snapshot.model!==model?.slug || threadMetadata?.id!==params.threadId ||
+      threadMetadata.status?.type!=='notLoaded' || threadMetadata.ephemeral!==false ||
+      threadMetadata.model!==snapshot.model || !snapshot.modelProvider ||
+      threadMetadata.modelProvider!==snapshot.modelProvider ||
+      (params.modelProvider!=null && params.modelProvider!==snapshot.modelProvider)) return params;
   try {
     const tier=readTargetPreference(readPreference,targetPreferenceKey(snapshot.threadId,snapshot.model),capacityLevels(model));
-    if(tier===null)return params;
+    if(tier===null || tier===model.context_window)return params;
     const plan=capacityRequest(snapshot,model,tier);
     if(CONFIG_KEYS.some(key=>params.config?.[key]!=null && params.config[key]!==plan.config[key]))return params;
     return resumeWithCapacity(params,plan,{...snapshot,threadMetadata});

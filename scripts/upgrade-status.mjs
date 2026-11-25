@@ -5,6 +5,7 @@ import {activeLoaderDirectory,loaderInstallDirectory} from './sidebar-loader-cli
 import {registeredCodexPackage,profileForUpgrade} from './verify-native-profile.mjs';
 import {experimentalLoaderFor,verifyExperimentalLoader,verifyExperimentalCli,cliVersion} from '../experiments/desktop-context-window/loader/release.mjs';
 import {inspectCodeModeHost} from '../experiments/desktop-context-window/code-mode-host.mjs';
+import {readStockResumeResult,describeStockResume} from './verify-stock-resume.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const messages={
@@ -22,6 +23,7 @@ const messages={
 // This check never starts a desktop, imports a script, reloads a page, or submits a turn.
 export async function inspectUpgrade({
   localData=process.env.LOCALAPPDATA,packageInfo=registeredCodexPackage,
+  stockResult=version=>readStockResumeResult({expectedDesktop:version}),
   pageProfile=(version,pkg)=>profileForUpgrade(version,pkg,{cachePath:join(root,'.research','launcher-profile.json')}),
   findLoader=async()=>{
     const install=await loaderInstallDirectory(localData),active=await activeLoaderDirectory(localData,install);
@@ -52,16 +54,22 @@ export async function inspectUpgrade({
   catch{return {...result,mode:'loader-unavailable'};}
   if(result.page==='unsupported')return {...result,mode:'unsupported-page'};
   if(result.page==='usage-only')return {...result,mode:'usage-only'};
-  if(!experimentalLoaderFor(pkg.version))return {...result,mode:'unverified-desktop'};
+  async function unverified(mode){
+    let check;
+    try{check=await stockResult(pkg.version);}catch{/* Status remains available without a readable cache. */}
+    return {...result,mode,...(check?{stockResume:check.outcome}:{})};
+  }
+  if(!experimentalLoaderFor(pkg.version))return unverified('unverified-desktop');
   try{
     if(!await experimentInstalled())return {...result,mode:'monitor-install'};
     return {...result,mode:'experimental',toolHost:await checkBuild(pkg,active)};
   }catch(error){
-    return {...result,mode:error.code==='UNVERIFIED_VERSION'?'unverified-loader':'repair-experiment'};
+    return error.code==='UNVERIFIED_VERSION'?unverified('unverified-loader'):{...result,mode:'repair-experiment'};
   }
 }
 
 export function describeUpgrade(result){
   const components=[result.desktop && 'Codex '+result.desktop,result.loader && 'Loader '+result.loader].filter(Boolean);
-  return (components.length?components.join(' / ')+'。':'')+messages[result.mode];
+  return (components.length?components.join(' / ')+'。':'')+
+    (result.stockResume?describeStockResume({outcome:result.stockResume}):messages[result.mode]);
 }

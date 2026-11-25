@@ -144,6 +144,12 @@ async function main(){
     if(check)throw Error(reason+'更新后的组合尚未验证实验扩容。');
     const notice=await startMonitorAfterUpdate({version:current.version,reason,env:process.env,
       experimentalBinary:binary,start:startSidebar,save:saveStatus,
+      checkStockResume:async version=>{
+        const {verifyStockResume,describeStockResume}=await import('../../scripts/verify-stock-resume.mjs');
+        const result=await verifyStockResume({expectedDesktop:version,
+          onProbe:()=>console.log('[progress] 普通监控已开启，正在用本机模拟对话检查新版官方后台…')});
+        return describeStockResume(result);
+      },
       waitForExit:interactive ? ()=>waitForManualExit(current.version,'请保存并完全退出 Codex。若 Loader 仍在后台，请点击“恢复 Loader”。两者退出后将自动打开普通监控。') : null});
     if(notice)console.log('[notice] '+notice);
   }

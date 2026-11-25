@@ -9,6 +9,7 @@
   "scripts": {
     "check:desktop-compat": "node scripts/sidebar-status.mjs --compat",
     "verify:desktop-compat": "node scripts/verify-desktop-compat.mjs",
+    "verify:stock-resume": "node scripts/verify-stock-resume.mjs",
     "start": "node src/server/http.mjs",
     "mcp": "node src/server/mcp.mjs",
     "test": "node --test tests/*.test.mjs",

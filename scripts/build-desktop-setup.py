@@ -80,7 +80,7 @@ for name in ["package.json","LICENSE","native-sidebar/manifest.json","native-sid
 if not args.measure_host_node:
     add(node)
 for name in ["launch-sidebar","launcher-core","ensure-sidebar","sidebar-loader-client","sync-sidebar",
-             "update-sidebar","verify-native-profile","rspack-usage","sidebar-status","upgrade-status"]:
+             "update-sidebar","verify-native-profile","rspack-usage","sidebar-status","upgrade-status","verify-stock-resume"]:
     add(f"scripts/{name}.mjs")
 for name in ["acorn.mjs","LICENSE"]:
     add("third_party/acorn/"+name)
@@ -93,6 +93,9 @@ for name in ["code-mode-host","loader/release"]:
     add(f"experiments/desktop-context-window/{name}.mjs")
 for name in ["launch-desktop","bridge-lifecycle","desktop-tier-bridge","wait-for-exit","update-fallback","turn-receipt"]:
     add(f"experiments/desktop-context-window/{name}.mjs",check="InstallExperimentalComponents")
+for name in ["scripts/probe-capacity-protocol.mjs","scripts/compaction-provider-fixture.mjs",
+             "src/control/capacity.mjs","src/control/reload.mjs","src/control/target-preference.mjs"]:
+    add(name,check="InstallExperimentalComponents")
 if not args.measure_without_backend:
     add(args.measure_backend.resolve() if args.measure_backend else backend,backend,check="InstallExperimentalComponents")
 for name in ["LICENSE","NOTICE"]:
