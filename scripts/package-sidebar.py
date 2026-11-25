@@ -23,19 +23,13 @@ print(json.dumps({'path': str(target), 'bytes': target.stat().st_size, 'sha256':
 if options.review_source:
     review_name = f'context-lens-{manifest["version"]}-review-source'
     review_zip = root / 'dist' / f'{review_name}.zip'
-    paths = [root / name for name in ('README.md', 'LICENSE', 'package.json', '.github/workflows/ci.yml',
+    paths = [root / name for name in ('README.md', 'README.en.md', 'LICENSE', 'package.json',
                                       'third_party/README.md', 'third_party/NODE-LICENSE.txt',
-                                      'docs/BETA2_REVIEW.zh-CN.md', 'docs/BETA4_REVIEW.zh-CN.md',
-                                      'docs/UPDATE_STRATEGY.zh-CN.md', 'docs/WINDOWS_SETUP.zh-CN.md')]
+                                      'docs/RELEASE-0.1.0.md', 'docs/REVIEW-0.1.0.md')]
     paths.extend(root.glob('*.cmd'))
     paths.extend((root / 'third_party/acorn').glob('*'))
-    evidence_tag = manifest['version'].split('-')[-1].replace('.', '')
-    paths.append(root / 'docs/evidence' / f'native-sidebar-{evidence_tag}-fixture.json')
-    paths.append(root / 'docs/evidence' / 'native-sidebar-profile-26.1117.4957.0.json')
-    paths.extend([root/'docs/evidence'/name for name in ('native-sidebar-profile-26.1120.5083.0.json','auto-profile-5083.json')])
-    paths.extend((root / 'docs/evidence').glob(f'desktop-compat-{evidence_tag}-*.json'))
-    paths.extend((root / 'docs/evidence').glob(f'windows-setup-{evidence_tag}*.json'))
-    paths = [path for path in paths if path.is_file()]
+    paths.extend((root / 'docs/assets').glob('*.gif'))
+    paths.extend((root / 'docs/assets').glob('*.png'))
     extensions = {'.mjs', '.rs', '.py', '.cs', '.iss', '.ps1', '.cmd', '.patch', '.json', '.md', '.html', '.css'}
     for directory in ('src', 'native-sidebar', 'experiments', 'scripts', 'tests', 'packaging'):
         paths.extend(p for p in (root / directory).rglob('*') if p.is_file() and p.suffix in extensions)

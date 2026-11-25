@@ -47,6 +47,7 @@ function bindings(factory){
   return {vars,funcs};
 }
 function exportsOf(factory){
+  if (factory?.params?.[2]?.type !== 'Identifier' || factory.params[1]?.type !== 'Identifier') return new Map();
   const defs=(factory?.body?.body??[]).map(s=>s.expression).filter(e=>e?.type==='CallExpression'&&
     e.callee.type==='MemberExpression'&&!e.callee.computed&&e.callee.object.name===factory.params[2]?.name&&
     e.callee.property.name==='d'&&e.arguments[0]?.name===factory.params[1]?.name);
@@ -136,11 +137,11 @@ export function inspectGetterBindings(state,composer,profile){
   const pending=match(pendingShape,local(mapping.pendingRequestKind),keys);
   checks.preflight_pendingRequestKind=!!(pending&&selector&&match('$select(({pendingRequest:$v})=>$v?.kind??null)',vars.get(pending.pending),{select:selector}));
   const wrapper=funcs.get(selector);
-  const forward=wrapper && match('$helper($state.ok,$select,$eq)',wrapper.body.body[0]?.argument,
+  const forward=wrapper?.body.body[0]?.type==='ReturnStatement' && match('$helper($state.ok,$select,$eq)',wrapper.body.body[0]?.argument,
     {select:wrapper.params[0]?.name,eq:wrapper.params[1]?.left?.name});
   const helper=forward && funcs.get(forward.helper);
   const selectorShape='(0,$atom.i1)($scope.u,($id,{get:$get})=>{if(null==$id)return null;let $info=$get($get($host.lG,$id)),$local=(0,$pick.Cg)($get,$id),$first=$get($state,null==$local?null:{hostId:$local,threadId:$id});if(null!=$first)return $fn($first);let $v=$get($state,{hostId:$info?.managerHostId??$get($host.qX,$id),threadId:$id});return null==$v?null:$fn($v)},{owner:$k=>$k,isEqual:$eq})';
-  checks.preflightSelectorReturnsNullWithoutState=!!(helper && match(selectorShape,helper.body.body[0]?.argument,
+  checks.preflightSelectorReturnsNullWithoutState=!!(helper?.body?.body?.[0]?.type==='ReturnStatement' && match(selectorShape,helper.body.body[0]?.argument,
     {...keys,state:helper.params[0]?.name,fn:helper.params[1]?.name,eq:helper.params[2]?.left?.name}));
   return {checks,usageExport,hostExport};
 }

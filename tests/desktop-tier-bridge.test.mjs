@@ -58,6 +58,10 @@ test('bridge acknowledges a write first and reports the subsequent native capaci
 });
 
 test('export only fresh explicit choices matching the local chat and model',()=>{
+  const namespaced='provider:model';
+  const tagged={...sample,capacityChoice:{...choice,expectedModel:namespaced},
+    diagnostics:{capacityPreflight:{host:'local',threadId:a,model:namespaced}}};
+  assert.equal(desktopChoice(tagged,now,now)?.record.expectedModel,namespaced);
   assert.deepEqual(desktopChoice(sample,now,now)?.record,{threadId:a,expectedModel:model,selection:{tokens:512000}});
   for(const other of [{...sample,capacityChoice:null},{...sample,threadId:b},{...sample,status:'waiting'},
     {...sample,diagnostics:{capacityPreflight:{host:'remote',model,threadId:a}}},
@@ -139,4 +143,15 @@ test('rechecks the visible choice after owner verification and retries a busy re
   acknowledge:async()=>assert.fail('old selection acknowledged')});
   const saved=JSON.parse(await readFile(join(home,'context-lens-desktop-tiers-v1',a+'.json'),'utf8'));
   assert.deepEqual(saved.selection,{tokens:512000});
+});
+
+test('tier files use the same canonical local UUID as the backend',async t=>{
+  const home=await mkdtemp(join(tmpdir(),'lens-tier-case-'));
+  t.after(()=>rm(home,{recursive:true,force:true}));
+  const threadId='ABCDEFAB-1111-4111-8111-111111111111';
+  await writeDesktopTier(home,{threadId,expectedModel:model,selection:'default'});
+  const folder=join(home,'context-lens-desktop-tiers-v1');
+  assert.deepEqual(await readdir(folder),[threadId.toLowerCase()+'.json']);
+  const record=JSON.parse(await readFile(join(folder,threadId.toLowerCase()+'.json'),'utf8'));
+  assert.equal(record.threadId,threadId.toLowerCase());
 });

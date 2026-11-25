@@ -1,62 +1,23 @@
-# Context Lens 左侧窄条 Beta 6
+# Context Lens 左栏扩展 · Sidebar extension 0.1.0
 
-Beta 6 内置 Codex 26.1120.5083.0 左栏监控适配。通过 Context Lens 快捷方式启动时，未识别的桌面版本会先检查本机页面资源。对受支持的 Rspack 模块，启动器静态核对当前对话、主机、最新用量和原生容量计算之间的关联，识别符合这一结构的新资源名及导出名，再同步本插件并启动桌面。只有选档字段失去匹配时，继续显示容量。真实扩容仍使用已单独验收的后台组合。
+## 安装与使用
 
-直接从 Loader 导入 ZIP 已内置 Codex 26.1117.4957.0 的页面适配。窗口过矮时，实验桥接保留待显示的回执，等左栏恢复空间后再投递。后台窗口重新显示时先等待当前对话的新读数。
+本 ZIP 是 Windows 版 Codex Script Loader 的 renderer 扩展。已有兼容 Loader 时，在 Codex 设置的 Script Loader 页面导入并启用 ZIP，再通过 Loader 打开一条本地对话。需要安装 Loader 或使用实验扩容时，可使用完整的 [Windows 安装包](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0)。
 
-在实验模式里，松开滑块后会先看到“预设已保存”。实验后台的桥接进程确认写入后显示“已提交”。Beta 4 会按对话 ID、模型和新的回合 ID 核对 Codex 上报的有效容量，再弹出“已生效 · 486.4k”等短提示。实际值与预期不同时，气泡给出两个数；最近一次结果也可以在右键“查看容量预设”中查看。普通监控模式可以保存预设。更新前已经运行的实验桥接进程会在下次从实验快捷方式重开后升级。
+- **读数**：窄条显示 Codex 上报的有效容量和剩余百分比。前台每 500 毫秒检查一次当前对话，页面隐藏时暂停。读数随原生用量事件更新。两个「—」表示暂时没有可核对的用量；可打开已有记录的本地对话，或在新对话中完成一个回合。剩余 ≤ 20% 时显示 5 秒提醒，恢复到 > 25% 后可再次触发。
+- **移动**：按住六点握柄向右拖出成为横向悬浮条。右击可切换竖向或固定回左栏。空间不足时停靠条会让出位置。显示偏好保存在本机。
+- **选档**：按住进度条直接拖动，或使用方向键和回车。松手保存当前对话、当前模型的预设，约 1.5 秒后回到实测容量。普通模式只保存预设。实验模式看到「已提交」后再发消息，后续回合显示的实测容量用于确认是否生效。模型有效比例为 95% 时，`512k` 的预计容量是 `486.4k`。
+- **更新**：ZIP 使用内置模型快照和页面适配表，含 `26.1117.4957.0` 和 `26.1120.5083.0`。完整启动器还会尝试核验新版页面；真实扩容按桌面、Loader 和后台的组合单独验收。更新后无读数可从开始菜单打开 **Context Lens → 查看状态**。Loader 残留时，先保存工作并退出 Codex，再用 **恢复 Loader**。
+- **权限**：扩展声明 `dom`，在当前页面内运行。`inspect` 接受空对象并返回状态、当前读数与预设选择；`staged` 和 `measured` 分别确认提交与实测，仅对匹配的选择显示回执。显示偏好和对话预设保存在本机。Loader 脚本可访问页面，请从可信来源安装。
 
-左栏消失时，完整本机版可点击启动窗口的“查看状态”，或单独运行 `dist/launcher/Context-Lens-Status.exe`。它会查询当前窗口，提示是否在等待对话、缺少左栏位置或仍在连接 Loader。
+## Installation and use
 
-Beta 3 的本地启动器使用 Windows 注册的安装位置检查新版 Codex。在会话和用量字段通过检查、选档所需字段发生变化时，左栏继续显示读数并暂停选档。核心检查失败时，左栏停止使用旧适配资料。真实扩容仍按桌面、Loader 和后台的已验证组合启用。
+This ZIP is a renderer extension for Codex Script Loader on Windows. With a compatible Loader installed, import and enable the ZIP in Codex Settings → Script Loader. Launch Codex through Loader and open a local chat. For a bundled Loader or experimental tier changes, use the [Windows installer](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0).
 
-Beta 2 在前台每 500 毫秒核对当前对话，页面隐藏时暂停采样。实际容量变化或导航栏布局变化时才重新测量停靠位置。拖动握柄时按 Escape 可恢复原位置和方向。
+- **Read the meter.** It shows effective capacity reported by Codex and the percentage remaining. The visible page checks the current chat every 500 ms and pauses while hidden. Readings change when Codex supplies usage. Two dashes mean usage is unavailable. Open an existing local chat or complete a turn in a new one. At ≤ 20% remaining a five-second warning appears. It re-arms above 25%.
+- **Move the meter.** Drag right from the six-dot grip to float horizontally. Right-click to switch orientation or dock again. The dock yields space to navigation controls. Layout preferences are stored locally.
+- **Select a tier.** Drag the bar directly, or use the arrow keys and Enter. Releasing saves the preset for this chat and model. The display returns to measured capacity after about 1.5 seconds. Standard mode saves the preset only. In experimental mode, wait for *Submitted* before sending a message and confirm the result from a later turn. At 95% effective capacity, `512k` gives an estimated `486.4k`.
+- **After an update.** The ZIP uses bundled model and page profiles, including `26.1117.4957.0` and `26.1120.5083.0`. The full launcher can also check new page assets. Experimental changes require a separately verified desktop, Loader, and backend combination. Open **Context Lens → 查看状态** (*Status*) if readings disappear. For a lingering Loader, save your work, exit Codex, and open **恢复 Loader** (*Recovery*).
+- **Permissions.** The extension declares `dom` and runs in the current page. `inspect` accepts an empty object and reports status, readings, and the current selection. `staged` and `measured` deliver submission and measurement receipts for a matching choice. Preferences and presets are stored locally. Install Loader scripts from sources you trust.
 
-此包是 **Codex Script Loader 的 renderer 扩展**，不是官方 MCP 插件包。它把监控条放进 Codex 的左侧导航栏布局，并可拖出为当前 Codex 窗口内的悬浮条。现有 Context Lens 官方右侧面板可以继续独立使用。
-
-本地测试版使用六个独立圆点。竖向时两排三点，横向时三排两点，整块握柄都可拖动。按住进度条时先显示当前读数，拖动时显示配置档位、预计有效容量和预计剩余百分比。松手后停留 1.5 秒再回到实际读数。通过本地启动器同步时，档位取自本机模型目录中的默认窗口、最大窗口和有效比例。直接导入 ZIP 使用内置目录快照。右击“查看容量预设”可查当前模型的默认容量。以当前 Astra 为例，默认 272k 对应 258.4k 有效容量，选择 512k 时预计有效 486.4k。
-
-Beta 1 的实机测试环境为 Windows 11、Codex `26.1117.3838.0` 和 Script Loader `0.6.2`。此 ZIP 可导入已安装的 Loader。真实扩容使用本机独立实验后台，从原对话的下一回合生效。全新系统安装、其他桌面版本和双窗口实机测试仍待验证。
-
-剩余容量降至 20% 时，气泡会为已识别的模型提供一个较大档位，选择预计能让剩余比例超过 20% 的最小档位。点击即可为本对话保存预设，已保存的更高档位优先。右击“查看容量预设”可对照当前实测容量、预设的预计有效窗口和预计压缩点。桌面中的实际容量仍以 Codex 上报值为准。
-
-Alpha 12 会通过 Loader 的本地 inspect 操作报告刚提交的档位、对话 ID、模型和提交时间。普通启动时，进度条始终显示 Codex 上报的有效容量。独立实验后台可在下一回合读取为该对话提交的档位。
-
-## 使用
-
-1. 首次使用需要自行安装 [Codex Script Loader](https://github.com/JHees/codex-script-loader)，并通过 Loader 启动 Codex。Loader 会启用本机回环调试接口并加载 renderer 脚本，脚本具有较广的页面访问能力；这不是官方插件的隔离面板机制。安装 Loader 与导入本包是两个步骤。
-2. 在 Codex 设置的 Script-Loader 中选择导入本包 ZIP，确认后启用。无需 Node、Python、终端命令或管理员权限。
-3. 打开一条本地对话。左栏空间足够且布局匹配时显示窄条；移到上面可看完整状态。Loader 0.6.1 启动页面切换后曾出现脚本实例丢失，通过 Loader 重新加载脚本可恢复；本项目工作区的 `Start-Sidebar.cmd` 已补加载检查，见下文。
-4. 握住顶端居中的拖动点向右拖出。悬浮条右击可切换横向／竖向或固定回左栏；方向不会因拖动改变。方向、停靠状态和相对位置保存在插件专属 Web Storage 中，热重载后保留；新窗口继承最近偏好，已有窗口各自独立。存储不可用时仍可使用，但偏好仅留在内存。显示位置会按窗口尺寸重新限制在可见区域。
-5. 禁用或移除扩展会清除窄条、计时器、监听器和样式，不修改 Codex 安装文件。
-
-## 数字含义与边界
-
-- 容量是 Codex 当前上报的 **有效上下文容量**，可能小于模型标称的 272k；不把有效容量推算成某个配置档位。
-- 百分比与条内填充都表示剩余容量；低于或等于 20% 为红色，并提示 5 秒。同一对话恢复到 25% 以上后才重新触发。
-- 读取原生状态中的 `last.totalTokens / modelContextWindow`，不用累计历史消耗，不自行跟踪每个 token。用量更新频率取决于 Codex 发布状态；每 250ms 检查页面状态。
-- 每个 Codex renderer 独立读取自己的主对话。新建未就绪、远程对话、身份冲突、版本不匹配或读取失败时清空百分比，不沿用上一条对话的数字。
-- 支持经过静态核对的 Windows Codex `26.1023.6123.0` ESM 资产及 `26.1103.3517.0`、`26.1103.4239.0`、`26.1111.2228.0`、`26.1111.9664.0`、`26.1117.3838.0` Rspack 资产。只导入已经加载且名称匹配的本地入口；新版只读取已初始化的用量模块缓存，不调用模块运行时或工厂。缓存尚未初始化、被移除或冲突时清空；替换后重新绑定。使用完整项目启动器遇到新版本时，会在本机检查已安装的应用资源。用量、会话身份、导航和模型选择器均匹配已核对结构时会自动适配。单独导入 ZIP 使用包内的适配表。**静态核对和隔离测试不等于真实 Codex 实机通过。**
-- 左栏必须存在唯一可见的竖向导航 rail 和个人资料按钮。空间不足、布局不明或可能覆盖原生按钮时自动隐藏停靠条。不会替换或隐藏原生额度按钮。
-- 滑块预设独立于已生效容量。菜单中的预设按本地对话和模型保存。预览档位取自 2026-11-18 核对的客户端模型目录，需有本地对话读数和已识别的模型。实际扩容仍需桌面恢复接口支持。
-- 悬浮条属于 Codex 页面，不是操作系统独立窗口。官方右侧面板的 Alpha 8 与本包版本独立。
-
-## 权限与数据
-
-包声明 `dom` 权限。用量和预检来自当前主输入框关联的状态。显示偏好保存在本地 `context-lens.sidebar.ui.v1`。保存容量预设时，插件以本地会话 ID 和模型标识为键保存一个档位数值，右键菜单可清除该项。用量、请求内容、聊天正文和权限配置均不写入此记录。
-
-Renderer 注入并不是安全沙箱，Loader 的 `dom` 声明并不会限制所有页面能力。请仅安装可信脚本。此包不包含 Loader 安装器，不自动下载／安装 Loader，也不自动重启 Codex。
-
-包另外声明一个只读宿主命令 `inspect`，仅接受空对象，返回版本、启动状态、显示模式、挂载状态和当前读数，以及固定的输入框／状态容器计数。安装后可通过 Loader 自带的 `CodexScriptLoader.Command.exe plugin invoke --id local.context-lens.sidebar --operation inspect`（标准输入为 `{}`）排查；它不接受 JavaScript、选择器、任意会话 ID 或操作指令，也不导出聊天内容。
-
-## 开发
-
-项目根目录运行 `node scripts/build-sidebar.mjs`，随后 `python scripts/package-sidebar.py`。测试：`node --test --test-isolation=none tests/sidebar.test.mjs tests/sidebar-update.test.mjs tests/sidebar-startup.test.mjs` 与 `node scripts/verify-native-sidebar.mjs`（本地 Playwright/Chrome）。测试夹具不打进分发包。
-
-本机静态核对：`node scripts/verify-native-profile.mjs --version=26.1117.3838.0`；`--rspack` 对应最早的 Rspack 版本，省略参数对应旧 ESM 版本。已安装 Alpha 1／2／3／4 的开发环境可在 Loader 退出时运行 `node scripts/update-sidebar.mjs`；显式添加 `--live-reload` 可通过 Loader 官方命令热重载，校验新版本，失败恢复旧文件并重载旧版。仅备份和替换本插件五个文件，不改变配置、执行策略或重启 Codex。
-
-项目根目录的 `Start-Sidebar.cmd` 与桌面图标使用同一个无控制台启动器。检查 Codex 已退出后启动已安装的 Loader，然后要求连续三次插件状态正常；已运行的 Loader 也可进行检查。遇到已确认的页面实例丢失错误最多重新加载一次，初始化尚未完成时只等待。这个入口依赖工作区中的辅助脚本和 Alpha 8 发行包内置 Node，未打进五文件扩展 ZIP；一般用户仍使用 Loader 导入 ZIP。11 月 17 日已验证该入口启动 Loader、等待选聊天并最终取得真实读数。
-
-工作区启动器会校验随项目附带的扩展包，并在需要时备份、同步已安装的本插件：文件相同不重载，Loader 正在运行时仅对有变化的包执行公开重载及版本确认。启用状态和 Loader 配置不重写；不会覆盖未知的新版本，也不会联网自动下载。首次安装 Loader/导入插件仍是独立步骤。只下载五文件 ZIP 的使用者继续从 Loader 导入；完整项目入口的自动同步不能当作 ZIP 自带能力。
-
-页面结构变化超出启动器识别范围时需要更新适配器。本机如果曾使用按程序版本绑定的防火墙例外，旧规则不会覆盖新安装路径。此时先运行 `Diagnose-Sidebar.cmd`，不能把连接超时当成脚本本身出错。例外安装是独立、需授权的故障修复步骤，限制为当前程序的 TCP 回环连接，可撤销；扩展 ZIP 和启动器不会自动修改防火墙。
+[完整项目文档 / Project documentation](https://github.com/loyce-cheng/codex-context-manager)

@@ -10,7 +10,7 @@ if not exist "%CONTEXT_LENS_DIAG_NODE%" (
 )
 echo Read-only network diagnosis. Windows will request administrator access.
 echo Reads firewall block rules. Does not add rules, disable protection, or restart Codex.
-powershell.exe -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; try { $probeArgs=([char]34)+$env:CONTEXT_LENS_DIAG_SCRIPT+([char]34)+' --firewall'; $probeProcess=Start-Process -FilePath $env:CONTEXT_LENS_DIAG_NODE -ArgumentList $probeArgs -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $probeProcess.ExitCode } catch { Write-Host 'Administrator diagnostic cancelled or failed.'; exit 1 }"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; try { $probeArgs=([char]34)+$env:CONTEXT_LENS_DIAG_SCRIPT+([char]34)+' --firewall'; $probeProcess=Start-Process -FilePath $env:CONTEXT_LENS_DIAG_NODE -ArgumentList $probeArgs -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $probeProcess.ExitCode } catch { Write-Host 'Administrator diagnostic cancelled or failed.'; exit 1 }"
 if errorlevel 1 (
   echo Diagnosis did not finish. No network settings were changed.
 ) else (

@@ -68,14 +68,15 @@ internal static class ContextLensLauncher {
             String.Equals(Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location),"Install-Context-Lens",StringComparison.OrdinalIgnoreCase);
         if(args.Length>2||check&&install||status&&(install||check)) return 2;
         foreach(string arg in args)if(arg.StartsWith("--")&&arg!="--check"&&arg!="--quiet"&&arg!="--install-shortcuts"&&arg!="--status")return 2;
-        bool owns;
         int exitCode=1;string notice=null;
-        using(var mutex=new Mutex(true,status?"Local\\ContextLensStatus":"Local\\ContextLensQuietLauncher",out owns)) {
-            if(!owns) {
-                if(!check&&!quiet) MessageBox.Show("Context Lens 的启动检查仍在进行，请稍候。","Context Lens",MessageBoxButtons.OK,MessageBoxIcon.Information);
-                return 3;
-            }
-            try {
+        using(var mutex=new Mutex(false,status?"Local\\ContextLensStatus":"Local\\ContextLensQuietLauncher")) {
+            bool acquired;
+            try { acquired=mutex.WaitOne(0); }
+            catch(AbandonedMutexException) { acquired=true; }
+            if(!acquired) {
+                notice="Context Lens 的启动检查仍在进行，请稍候。";
+                exitCode=3;
+            } else try {
                 string root=args.Length>0&&!args[0].StartsWith("--")?Path.GetFullPath(args[0]):DefaultRoot();
                 string manifest=File.ReadAllText(Path.Combine(root,"package.json"));
                 Match version=Regex.Match(manifest,"\"version\"\\s*:\\s*\"([0-9A-Za-z.+-]+)\"");

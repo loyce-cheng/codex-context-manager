@@ -1,6 +1,6 @@
 # 当前对话日志原型
 
-本目录是实机验证用的只读原型，**没有接入 Alpha 2，也不进入其安装包**。
+本目录是实机验证用的只读原型，正式左栏使用当前窗口中的原生会话和用量状态。此原型仅供研究旧版日志。
 
 在 Windows Codex 26.1023.6123.0 上，应用日志的 `IAB_LIFECYCLE received browser sidebar owner sync` 事件提供 `ownerRoutePath`。本次实测路径为 `/local/<thread UUID>?hostId=local`，同时包含 Electron 的 `windowId` 和 `originWebContentsId`。它们不是 Windows HWND 或屏幕坐标。
 
@@ -27,4 +27,4 @@ node experiments/desktop-log-follow/probe.mjs --window <Electron窗口ID> --rend
 - 此原型只用于识别和读取，不执行热扩容、压缩或配置写入。
 - 只保留日志中的事件身份和必要数字字段；不输出日志正文或对话内容。使用 2MB 追加读取上限，出现截断或缺口时清除状态；文件轮转策略仍需发行前的专门验证。
 
-实测与后续开发条件见 [日志验证报告](../../docs/AUTO_FOLLOW_LOG_VALIDATION.zh-CN.md)。
+可用仓库中的 [日志选择测试](../../tests/desktop-log-selection.test.mjs) 核对原型对会话切换的判断。

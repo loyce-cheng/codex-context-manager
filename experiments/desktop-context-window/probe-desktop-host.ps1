@@ -41,6 +41,7 @@ $env:CODEX_ELECTRON_USER_DATA_PATH=$profile
 if(!$Stock){
     $env:CODEX_CLI_PATH=$candidate
     $env:CONTEXT_LENS_DESKTOP_TIERS='1'
+    $env:LENS_EXPECTED_DESKTOP=[string]$package.Version
 }
 $stockPath=[IO.Path]::GetFullPath((Join-Path $package.InstallLocation 'app/resources/codex.exe'))
 $result=[ordered]@{desktopVersion=[string]$package.Version;cliVersion=$version;activation=$Activation;isolatedProfile=$true;started=$false;isolatedMainObserved=$false;candidateObserved=$false;packagedBackendObserved=$false;backendStayedUp=$false;liveCapacityVerified=$false}

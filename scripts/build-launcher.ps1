@@ -12,4 +12,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Recovery tool compilation failed.' }
 Copy-Item -LiteralPath (Join-Path $out 'Context-Lens.exe') -Destination (Join-Path $out 'Install-Context-Lens.exe') -Force
 Copy-Item -LiteralPath (Join-Path $out 'Context-Lens.exe') -Destination (Join-Path $out 'Context-Lens-Experimental.exe') -Force
 Copy-Item -LiteralPath (Join-Path $out 'Context-Lens.exe') -Destination (Join-Path $out 'Context-Lens-Status.exe') -Force
+$version = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
+Copy-Item -LiteralPath (Join-Path $out 'Context-Lens-Recovery.exe') -Destination (Join-Path $out "Codex-Context-Manager-$version-Recovery.exe") -Force
 Write-Output (Join-Path $out 'Context-Lens.exe')

@@ -4,11 +4,12 @@ import {resolve} from 'node:path';
 // Only report a successful fallback after the normal launcher's readiness check.
 export async function startMonitorAfterUpdate({version,reason,env,experimentalBinary,start,save,waitForExit}){
   const monitorEnv={...env};
-  delete monitorEnv.CONTEXT_LENS_DESKTOP_TIERS;
-  delete monitorEnv.LENS_EXPECTED_DESKTOP;
-  if(monitorEnv.CODEX_CLI_PATH &&
-      resolve(monitorEnv.CODEX_CLI_PATH).toLowerCase()===resolve(experimentalBinary).toLowerCase()){
-    delete monitorEnv.CODEX_CLI_PATH;
+  for (const [key,value] of Object.entries(monitorEnv)) {
+    const name=key.toUpperCase();
+    if (name==='CONTEXT_LENS_DESKTOP_TIERS' || name==='LENS_EXPECTED_DESKTOP' ||
+        (name==='CODEX_CLI_PATH' && value && resolve(value).toLowerCase()===resolve(experimentalBinary).toLowerCase())) {
+      delete monitorEnv[key];
+    }
   }
   let report;
   try { report=await start(monitorEnv); }

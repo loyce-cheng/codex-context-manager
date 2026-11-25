@@ -7,3 +7,5 @@ The build requires this exact runtime version and writes its SHA-256 to `runtime
 When the Windows installer supplies a private copy of Codex Script Loader 0.6.2, it uses the pinned upstream Windows x64 portable ZIP. The Loader license and branding notice are installed under `third_party`. The experimental builds also contain these notices alongside their own verified manifests. [Upstream release](https://github.com/JHees/codex-script-loader/releases/tag/v0.6.2)
 
 The Windows launcher bundles Acorn 8.15.0 for local, read-only parsing of JavaScript assets. The upstream ES module and MIT license are in `third_party/acorn`. The standalone sidebar ZIP uses its built-in profiles. [Acorn](https://github.com/acornjs/acorn)
+
+The optional experimental backend is built from OpenAI Codex with the patches in this repository. The Windows installer includes upstream LICENSE and NOTICE files when this component is installed. [Tagged backend source and Apache 2.0 license](https://github.com/openai/codex/tree/581161ab41e643d942e1e1b5f561034060bf18e3)

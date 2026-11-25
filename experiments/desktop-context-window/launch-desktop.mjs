@@ -1,6 +1,6 @@
 import {spawn, execFile} from 'node:child_process';
-import {mkdir,realpath, writeFile} from 'node:fs/promises';
-import {createServer} from 'node:net';
+import {mkdir, writeFile} from 'node:fs/promises';
+import {acquireBridgeLease, prepareCodexHome, launchExitCode} from './bridge-lifecycle.mjs';
 import {homedir} from 'node:os';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -124,14 +124,8 @@ async function watch(){
   const stillOwned=async()=>{const current=await owner(process.env.LENS_EXPECTED_DESKTOP);return current?.pid===pid && current.born===born;};
   if(!await stillOwned())throw Error('桌面后台已切换。');
   const client=await loaderClient(process.env.LOCALAPPDATA);
-  // Windows releases the named pipe when its owner exits. It has no commands.
-  const lease=createServer(socket=>socket.destroy());
-  try{
-    await new Promise((ok,fail)=>{lease.once('error',fail);lease.listen('\\\\.\\pipe\\context-lens-tier-'+pid+'-'+born,ok);});
-  }catch(error){
-    if(error.code!=='EADDRINUSE')throw error;
-    process.send?.({inUse:true});process.disconnect?.();return;
-  }
+  const lease=await acquireBridgeLease(process.env.LOCALAPPDATA,pid,born);
+  if(!lease){process.send?.({inUse:true});process.disconnect?.();return;}
   if(process.send){process.send({ready:true});process.disconnect();}
   const timer=setInterval(()=>{try{process.kill(pid,0);}catch{controller.abort();}},2000);
   try{
@@ -166,7 +160,7 @@ async function main(){
   let backend=await owner(appVersion);
   if(check){
     const stock=backend?null:await owner(appVersion,{stock:true});
-    console.log(JSON.stringify({appVersion,cliVersion,loaderVersion:'0.6.2',sha256:expectedSha256,codeModeHostVerified:true,verified:true,attached:Boolean(backend),stockOwnedByLoader:Boolean(stock)}));
+    console.log(JSON.stringify({appVersion,cliVersion,loaderVersion:'0.6.2',sha256:expectedSha256,codeModeHostVerified:true,verified:true,attached:Boolean(backend),stockOwnedByLoader:backend ? false : stock ? true : null}));
     return;
   }
   for(const name of ['CODEX_APP_SERVER_DISABLE_MANAGED_CONFIG','CODEX_APP_SERVER_MANAGED_CONFIG_PATH','CODEX_CLI_PATH']){
@@ -174,7 +168,7 @@ async function main(){
         process.env[name] && resolve(process.env[name]).toLowerCase()===resolve(binary).toLowerCase())continue;
     if(process.env[name])throw Error('检测到现有的自定义后台环境 '+name+'，保留原设置并停止实验启动。');
   }
-  const home=await realpath(process.env.CODEX_HOME||join(homedir(),'.codex'));
+  const home=await prepareCodexHome(process.env.CODEX_HOME||join(homedir(),'.codex'));
   const env={...process.env,CODEX_HOME:home,CODEX_CLI_PATH:binary,CONTEXT_LENS_DESKTOP_TIERS:'1',LENS_EXPECTED_DESKTOP:appVersion};
   if(!backend){
     if(current.running||current.loader){
@@ -207,5 +201,5 @@ main().catch(async error=>{
   if(process.argv.includes('--watch'))await recordBridgeError(error.code??error.name,true);
   if(!process.argv.includes('--watch')&&!process.argv.includes('--check'))
     await saveStatus({stage:'error',error:error.message}).catch(()=>{});
-  console.error(error.message);process.exitCode=1;
+  console.error(error.message);process.exitCode=launchExitCode(error);
 });

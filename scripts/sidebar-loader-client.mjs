@@ -74,7 +74,8 @@ export async function loaderClient(localData) {
             resolve(value);
           } catch (parseError) { reject(error ?? parseError); }
         });
-      child.stdin.on('error', reject); child.stdin.end(JSON.stringify(payload));
+      child.stdin.on('error', error => { if (error.code !== 'EPIPE') reject(error); });
+      child.stdin.end(JSON.stringify(payload));
     });
   }
   return {

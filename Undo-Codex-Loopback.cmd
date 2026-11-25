@@ -9,7 +9,7 @@ if not exist "%CONTEXT_LENS_REPAIR_NODE%" (
   exit /b 1
 )
 echo Removes only verified Context Lens Codex loopback rules. Other rules stay unchanged.
-powershell.exe -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; try { $repairArgs=([char]34)+$env:CONTEXT_LENS_REPAIR_SCRIPT+([char]34)+' remove --approved'; $repairProcess=Start-Process -FilePath $env:CONTEXT_LENS_REPAIR_NODE -ArgumentList $repairArgs -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $repairProcess.ExitCode } catch { Write-Host 'Removal cancelled or failed.'; exit 1 }"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; try { $repairArgs=([char]34)+$env:CONTEXT_LENS_REPAIR_SCRIPT+([char]34)+' remove --approved'; $repairProcess=Start-Process -FilePath $env:CONTEXT_LENS_REPAIR_NODE -ArgumentList $repairArgs -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $repairProcess.ExitCode } catch { Write-Host 'Removal cancelled or failed.'; exit 1 }"
 if errorlevel 1 (
   echo Removal did not complete. Inspect .research\codex-loopback-repair-error.txt.
 ) else (

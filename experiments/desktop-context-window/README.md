@@ -38,17 +38,17 @@ node scripts/probe-capacity-protocol.mjs "<完整实验 CLI>" --desktop-cli --lo
 
 维护者可用 `build-desktop-setup.py --portable-loader <固定发行 ZIP> --measure-backend <候选 CLI>` 配合原有 `--iscc`、`--codex-source` 参数试打完整载荷；可选 `--measure-large-dictionary` 对比强压缩。测量编译不会发布安装器。构建多版本 Loader 时，`loader/build.ps1 -DesktopVersion 26.1117.3838.0 -AdditionalDesktopVersions 26.1117.4957.0 -StageOnly` 使用同一份组件测试两个精确版本，同时核对启动时选定的桌面版本。多版本实验另需传入已固定的源码 ZIP 和 .NET SDK。
 
-Windows 26.1117.4957.0 的专用 Loader 随本机实验入口选择，旧版 3838 的构建保存在原目录。4957 的隔离桌面实际启动了实验后台，并在测试后退出。双对话回合使用独立资料目录和本地模拟模型。切换个人窗口后，以该窗口下一回合的原生容量确认实际效果。[4957 验证记录](../../docs/evidence/experimental-desktop-26.1117.4957.0.json)
+Windows 26.1117.4957.0 的专用 Loader 随本机实验入口选择，旧版 3838 的构建保存在原目录。4957 的隔离桌面实际启动了实验后台，并在测试后退出。双对话回合使用独立资料目录和本地模拟模型。切换个人窗口后，以该窗口下一回合的原生容量确认实际效果。
 
 日常监控使用“Codex + Context Lens”。要启用单对话扩容，打开 `dist/launcher/Context-Lens-Experimental.exe`。首次从普通模式切换时，启动器会等最多 15 分钟供你保存并完全退出 Codex，然后自动启动。关闭等待提示可以取消。进入实验模式后，打开原来的本地对话，拖到 512k，看到“已提交”再发一条消息。这个版本在该档位报告的有效窗口是 486,400。以后为同一窗口中的其他聊天调档也在各自下一回合生效。
 
 本机桌面和开始菜单另有 **Codex + Context Lens（实验扩容）**。保存工作并完全退出普通 Codex 后，可随时从这个入口直接启动实验模式。要在其他已完成构建的机器上创建同名入口，运行 `dist/launcher/Context-Lens-Experimental.exe --install-shortcuts`。
 
-实验启动器使用单独编译的 Loader 0.6.2 和 Windows 注册的 Codex 启动别名。隔离桌面实测覆盖了最终编译的启动组件、返回的桌面进程 ID、父子关系和实际后台路径。两个聊天的容量回执使用同一份完整 CLI 和本地模型夹具验证。个人桌面原对话的生效依据是选档后下一回合的原生容量。[启动对照](../../docs/evidence/loader-062-activation-win11.json) · [编译产物实测](../../docs/evidence/experimental-loader-win11-20261121.json)
+实验启动器使用单独编译的 Loader 0.6.2 和 Windows 注册的 Codex 启动别名。隔离桌面实测覆盖了最终编译的启动组件、返回的桌面进程 ID、父子关系和实际后台路径。两个聊天的容量回执使用同一份完整 CLI 和本地模型夹具验证。个人桌面原对话的生效依据是选档后下一回合的原生容量。
 
 在有 PowerShell 7、Git、Visual C++ Build Tools、Windows SDK 和 .NET SDK 10.0.403 的 Win11 机器上，可以用 `loader/build.ps1 -SourceArchive <上游源码 ZIP> -Dotnet <dotnet.exe>` 复建独立 Loader。下载固定提交的源码 ZIP 并由构建脚本核对 SHA-256。脚本从干净源码应用启动补丁并生成完整文件清单。维护者发布新构建前需要复测，再更新 `loader/release.mjs` 中固定的清单摘要。[上游源码 ZIP](https://codeload.github.com/JHees/codex-script-loader/zip/c9d38d66c6643e6780a67e280488a36f53b6da4e)
 
-实验入口校验桌面版本和本地候选程序的 SHA-256。Codex 更新到尚未验证的版本时走普通左栏启动流程。后台文件是本地构建产物，单独导入左栏 ZIP 只会安装左栏。Windows 桌面选中实验程序、完整 CLI 接收桌面参数、只读沙箱允许读取并拒绝写入，以及两个隔离聊天的原生容量均已实测。[本机测试结果](../../docs/evidence/experimental-desktop-win11-20261121.json)
+实验入口校验桌面版本和本地候选程序的 SHA-256。Codex 更新到尚未验证的版本时走普通左栏启动流程。后台文件是本地构建产物，单独导入左栏 ZIP 只会安装左栏。Windows 桌面选中实验程序、完整 CLI 接收桌面参数、只读沙箱允许读取并拒绝写入，以及两个隔离聊天的原生容量均已实测。
 
 桌面执行代码工具还依赖与后台相邻的 `codex-code-mode-host.exe`。正常启动时，若实验目录缺少该文件，启动器从已安装的匹配版本 Codex 包复制并校验 SHA-256。`--check` 只做校验。选档时如果一条回复已经开始，该回合的原生容量会保留到结束；下一条消息可以在同一对话验证新容量。
 
@@ -114,7 +114,7 @@ cargo test --locked -p codex-app-server --test all context_window_set_changes_on
 
 2026-11-21，桌面日志报告后台仍为 `0.171.0-alpha.13`。使用校验过发布 SHA-256 的同版本官方独立后台和本机模拟模型完成 4 个对照回合。默认聊天的原生用量通知报告 258,400，可用窗口按 512k 启动的聊天报告 486,400。对已加载的默认聊天提交扩容请求得到“未知方法”，两条聊天各自的读数保持原值。
 
-同一份 1,880,000 字节的合成历史在 512k 档触发并完成了自动压缩。后续请求携带了模拟摘要；模拟提供方报告的用量从 483,995 下降到 34,068。768k 档正常完成回合，没有触发压缩。测试中的 token 数由模拟提供方计算。复测时可在下列两个命令中将可执行文件替换为同版本的独立 app-server。[Win11 测量记录](../../docs/evidence/backend-window-win11-20261121.json)
+同一份 1,880,000 字节的合成历史在 512k 档触发并完成了自动压缩。后续请求携带了模拟摘要；模拟提供方报告的用量从 483,995 下降到 34,068。768k 档正常完成回合，没有触发压缩。测试中的 token 数由模拟提供方计算。复测时可在下列两个命令中将可执行文件替换为同版本的独立 app-server。
 
 ```sh
 node scripts/probe-capacity-protocol.mjs "<官方 app-server>" --standalone --loaded-window=stock --complete
@@ -147,7 +147,7 @@ node scripts/probe-capacity-protocol.mjs "<官方 codex 路径>" --local-turn --
 node scripts/probe-auto-compaction.mjs "<官方 codex 路径>"
 ```
 
-补丁模式会核对同一对话改档、重复提交、越界拒绝、恢复默认值、另一条聊天以及全局设置。原型的 4 项轻量 Rust 测试已经通过。官方后台已实测发出压缩开始事件，本机模拟模型的 HTTP 请求超时，摘要生成与后续回合尚待验证。[本轮测量](../../docs/evidence/backend-window-0.171.0-alpha.13.json)
+补丁模式会核对同一对话改档、重复提交、越界拒绝、恢复默认值、另一条聊天以及全局设置。原型的 4 项轻量 Rust 测试已经通过。官方后台已实测发出压缩开始事件，本机模拟模型的 HTTP 请求超时，摘要生成与后续回合尚待验证。
 
 ### 较早版本
 

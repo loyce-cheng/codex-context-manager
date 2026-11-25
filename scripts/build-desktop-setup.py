@@ -91,7 +91,7 @@ for name in ["Context-Lens","Context-Lens-Status","Context-Lens-Recovery","Conte
         check="InstallExperimentalComponents" if name.endswith("Experimental") else None)
 for name in ["code-mode-host","loader/release"]:
     add(f"experiments/desktop-context-window/{name}.mjs")
-for name in ["launch-desktop","desktop-tier-bridge","wait-for-exit","update-fallback","turn-receipt"]:
+for name in ["launch-desktop","bridge-lifecycle","desktop-tier-bridge","wait-for-exit","update-fallback","turn-receipt"]:
     add(f"experiments/desktop-context-window/{name}.mjs",check="InstallExperimentalComponents")
 if not args.measure_without_backend:
     add(args.measure_backend.resolve() if args.measure_backend else backend,backend,check="InstallExperimentalComponents")
@@ -137,11 +137,11 @@ with tempfile.TemporaryDirectory(dir=output_dir,prefix="desktop-setup-build-") a
                     source.write_bytes(data)
                     loader_sources[key]=source
                 add(source,Path("dist/private-loader")/rel,check="InstallPrivateLoader")
-        # Keep the stock runtime together ahead of the optional experimental payload.
-        includes[:]=includes[start:]+includes[:start]
         for notice in ["LICENSE-Loader.txt","NOTICE-Loader-branding.md"]:
             add(root/"dist"/release["builds"][0]["directory"]/notice,
                 Path("third_party")/notice,check="InstallPrivateLoader")
+        # Keep the stock runtime together ahead of the optional experimental payload.
+        includes[:]=includes[start:]+includes[:start]
     marker=stage/"context-lens-install.id"
     marker.write_bytes(b"Context Lens Desktop")
     # A monitor-only installation can seek directly to its final marker.

@@ -64,6 +64,6 @@ $removed=@(foreach($rule in $rules){$name=$rule.Name;$rule|Remove-NetFirewallRul
 [pscustomobject]@{operation='remove';removed=$removed}|ConvertTo-Json -Compress
 `;
 try{
- const result=await run('powershell.exe',['-NoProfile','-NonInteractive','-Command',"$approvedVersion='"+(expectedVersion??'')+"'\n"+common+(mode==='install'?install:remove)],{windowsHide:true,timeout:30000,maxBuffer:16384});
+ const result=await run(join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),['-NoProfile','-NonInteractive','-Command',"$approvedVersion='"+(expectedVersion??'')+"'\n"+common+(mode==='install'?install:remove)],{windowsHide:true,timeout:30000,maxBuffer:16384});
  const report=JSON.parse(result.stdout.replace(/^\uFEFF/,''));report.checkedAt=new Date().toISOString();await mkdir(join(root,'.research'),{recursive:true});await writeFile(join(root,'.research','codex-loopback-repair.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(error){await mkdir(join(root,'.research'),{recursive:true});await writeFile(join(root,'.research','codex-loopback-repair-error.txt'),String(error.stderr??error.message));console.error('Repair did not complete. Inspect the local error report; no global firewall settings were changed.');process.exitCode=1;}

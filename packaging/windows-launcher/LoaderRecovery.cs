@@ -87,7 +87,7 @@ internal static class LoaderRecovery {
             foreach (var name in new [] { "ChatGPT", "Codex" }) {
                 foreach (var process in Process.GetProcessesByName(name)) using (process) {
                     try {
-                        if (process.HasExited || process.SessionId != self.SessionId) continue;
+                        if (process.SessionId != self.SessionId || process.HasExited) continue;
                         string path = process.MainModule.FileName;
                         // Packaged CLI tools live below app/resources; the desktop lives directly in app.
                         if (name == "ChatGPT" || !Regex.IsMatch(path,
@@ -121,8 +121,9 @@ internal static class LoaderRecovery {
                     string pipe;
                     using (var identity=WindowsIdentity.GetCurrent()) pipe=UserPipe(identity.User.Value);
                     await Task.Run(() => RequestDiagnostics(pipe));
+                    if (window.IsDisposed) return;
                     note.Text="已发送打开诊断窗口的请求。请在该窗口点击 Exit Loader。如果窗口一直没有出现，退出 Codex 后可选择结束残留的 Loader。";
-                } catch (Exception) { note.Text="Loader 的管理通道没有响应。如果已退出 Codex，可以选择结束残留的 Loader。"; }
+                } catch (Exception) { if (!window.IsDisposed) note.Text="Loader 的管理通道没有响应。如果已退出 Codex，可以选择结束残留的 Loader。"; }
                 finally { if (!window.IsDisposed) open.Enabled=end.Enabled=true; }
             };
             end.Click += async (sender, args) => {
@@ -145,7 +146,7 @@ internal static class LoaderRecovery {
                         }
                         note.Text="该 Loader 实例已退出。现在可以重新打开 Context Lens 快捷方式。";
                     }
-                } catch (Exception error) { note.Text=FriendlyError(error); }
+                } catch (Exception error) { if (!window.IsDisposed) note.Text=FriendlyError(error); }
                 finally { if (!window.IsDisposed) open.Enabled=end.Enabled=true; }
             };
             window.Shown += (sender, args) => open.PerformClick();

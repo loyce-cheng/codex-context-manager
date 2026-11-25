@@ -17,7 +17,7 @@ export function desktopChoice(inspection, started, now) {
   if (inspection?.status !== 'following' || selected?.host !== 'local' ||
       !choice || !/^[0-9a-f]{32}$/.test(choice.id) || !uuid.test(choice.threadId) ||
       choice.threadId !== inspection.threadId || choice.threadId !== selected.threadId ||
-      !/^[a-zA-Z0-9._-]{1,96}$/.test(choice.expectedModel ?? '') ||
+      !/^[a-zA-Z0-9._:-]{1,96}$/.test(choice.expectedModel ?? '') ||
       choice.expectedModel !== selected.model || !Number.isSafeInteger(choice.chosenAt) ||
       choice.chosenAt < Math.max(started, now - 15000) || choice.chosenAt > now) return null;
   const tokens = choice.selection?.tokens;
@@ -32,8 +32,8 @@ export async function writeDesktopTier(home, record) {
   await mkdir(directory, {recursive:true, mode:0o700});
   const temporary = join(directory, randomUUID()+'.tmp');
   try {
-    await writeFile(temporary, JSON.stringify(record), {flag:'wx', mode:0o600});
-    await rename(temporary, join(directory,record.threadId+'.json'));
+    await writeFile(temporary, JSON.stringify({...record,threadId:record.threadId.toLowerCase()}), {flag:'wx', mode:0o600});
+    await rename(temporary, join(directory,record.threadId.toLowerCase()+'.json'));
   } finally {
     await rm(temporary, {force:true});
   }
@@ -45,7 +45,7 @@ export async function followDesktopChoices({home, inspect, signal, beforeWrite=a
   const source=new LocalCodexSource({home}), submitted=new Map();
   while (!signal.aborted) {
     try {
-      const response = await inspect();
+      let response = await inspect();
       if(response?.ok===false)await onError(response.error?.code ?? 'INSPECT_FAILED');
       const choice = response?.ok && desktopChoice(response.result, started, Date.now());
       const prior=choice && submitted.get(choice.record.threadId);
@@ -55,11 +55,14 @@ export async function followDesktopChoices({home, inspect, signal, beforeWrite=a
           try{readTurn=await openTurnReceipt(source,choice.record);}
           catch(error){await onError(error.code??'RECEIPT_UNAVAILABLE');}
         }
-        const confirmation=await inspect();
-        if(!signal.aborted && confirmation?.ok && desktopChoice(confirmation.result,started,Date.now())?.id===choice.id){
+        response=await inspect();
+        const confirmed=response?.ok && desktopChoice(response.result,started,Date.now());
+        if(!signal.aborted && confirmed?.id===choice.id &&
+            confirmed.record.threadId===choice.record.threadId && confirmed.record.expectedModel===choice.record.expectedModel &&
+            (confirmed.record.selection.tokens??'default')===(choice.record.selection.tokens??'default')){
           await writeDesktopTier(home, choice.record);
           submitted.delete(choice.record.threadId);
-          submitted.set(choice.record.threadId,{...choice,chosenAt:confirmation.result.capacityChoice.chosenAt,submittedAt:Date.now(),readTurn,acknowledged:false});
+          submitted.set(choice.record.threadId,{...choice,chosenAt:response.result.capacityChoice.chosenAt,submittedAt:Date.now(),readTurn,acknowledged:false});
           if(submitted.size>64)submitted.delete(submitted.keys().next().value);
         }
       }

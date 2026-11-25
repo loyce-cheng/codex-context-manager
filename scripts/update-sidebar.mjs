@@ -58,7 +58,7 @@ export function bundleForLocalBuild(bundle, profile) {
 export function bundleForModelCatalog(bundle, models) {
   const rows=[];
   for(const [slug,{defaultWindow,maxWindow,effectivePercent}] of models){
-    if(!/^[A-Za-z0-9._-]{1,96}$/.test(slug))continue;
+    if(!/^[A-Za-z0-9._:-]{1,96}$/.test(slug))continue;
     try{modelCapacity({slug,context_window:defaultWindow,max_context_window:maxWindow,effective_context_window_percent:effectivePercent});}
     catch{continue;}
     rows.push([slug,defaultWindow,maxWindow,effectivePercent]);

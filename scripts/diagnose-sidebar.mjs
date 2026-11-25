@@ -6,6 +6,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import net from 'node:net';
 import http from 'node:http';
+import { adapterCompatibilityIssue } from './diagnose-adapter.mjs';
 import { PROFILES } from '../native-sidebar/src/telemetry.mjs';
 import { loaderClient,loaderInstallDirectory } from './sidebar-loader-client.mjs';
 
@@ -94,7 +95,7 @@ $apps = @($items | Where-Object { $_.ExecutablePath -match 'WindowsApps\\\\OpenA
 })
 [pscustomobject]@{ loaderRunning=([bool](Get-Process -Name CodexScriptLoader -ErrorAction SilentlyContinue)); apps=$apps; execution=@{ elevated=$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator); legacySandboxAccount=($identity.Name -match '\\\\CodexSandbox(?:Offline|Online)$') } } | ConvertTo-Json -Depth 4 -Compress
 `;
-  const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 20000, maxBuffer: 65536 });
+  const { stdout } = await run(join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'), ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 20000, maxBuffer: 65536 });
   const inventory = JSON.parse(stdout.replace(/^\uFEFF/, ''));
   report.loader.running = inventory.loaderRunning;
   report.processes = inventory.apps ?? [];
@@ -172,21 +173,8 @@ if (report.loader.running && process.env.LOCALAPPDATA) {
     } else report.renderer = { status: 'INSPECT_FAILED', code: response.error?.code ?? 'UNKNOWN' };
   } catch { report.renderer = { status: 'INSPECT_UNAVAILABLE' }; }
 }
-// A running locally verified adapter can support builds beyond the shipped list.
-if (/^0\.1\.0-beta\.\d+$/.test(report.extension.version ?? '')) {
-  for(const app of report.processes){
-    const renderer=report.renderer;
-    if(renderer?.version===report.extension.version && renderer.status==='unsupported'){
-      report.conclusions.push('INSTALLED_ADAPTER_DOES_NOT_MATCH_APP');
-      break;
-    }
-    const bundled=projectManifest?.version===report.extension.version && PROFILES.some(profile=>profile.appVersion===app.appVersion);
-    if(!bundled && renderer?.diagnostics?.profile!==app.appVersion){
-      report.conclusions.push('INSTALLED_ADAPTER_COMPATIBILITY_UNVERIFIED');
-      break;
-    }
-  }
-}
+const adapterIssue = adapterCompatibilityIssue(report, projectManifest?.version, PROFILES);
+if (adapterIssue) report.conclusions.push(adapterIssue);
 if (includeFirewall) {
   try {
     const script = `
@@ -205,7 +193,7 @@ $details = @($rules | Select-Object -First 100 | ForEach-Object {
 })
 [pscustomobject]@{ elevated=$admin; blockRuleCount=$rules.Count; truncated=($rules.Count -gt 100); profiles=@(Get-NetFirewallProfile | Select-Object Name,Enabled,DefaultInboundAction,DefaultOutboundAction); rules=$details } | ConvertTo-Json -Depth 6 -Compress
 `;
-    const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 45000, maxBuffer: 524288 });
+    const { stdout } = await run(join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'), ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 45000, maxBuffer: 524288 });
     report.firewall = JSON.parse(stdout.replace(/^\uFEFF/, ''));
   } catch (error) { report.firewall = { status: 'QUERY_FAILED', code: error.code ?? 'UNKNOWN' }; }
 }
@@ -219,7 +207,7 @@ if (includeWfp) {
     if (!app.listenerOwned || !Number.isInteger(app.port) || app.port < 1 || app.port > 65535) continue;
     const name = `wfp-loopback-${app.port}-${Date.now()}.xml`;
     try {
-      const { stdout, stderr } = await run('netsh.exe', ['wfp', 'show', 'filters', `file=${join(directory, name)}`, 'protocol=6', 'localaddr=127.0.0.1', 'remoteaddr=127.0.0.1', `remoteport=${app.port}`, 'dir=OUT', 'verbose=ON'], { windowsHide: true, timeout: 45000, maxBuffer: 65536 });
+      const { stdout, stderr } = await run(join(process.env.SystemRoot, 'System32', 'netsh.exe'), ['wfp', 'show', 'filters', `file=${join(directory, name)}`, 'protocol=6', 'localaddr=127.0.0.1', 'remoteaddr=127.0.0.1', `remoteport=${app.port}`, 'dir=OUT', 'verbose=ON'], { windowsHide: true, timeout: 45000, maxBuffer: 65536 });
       // netsh can print an elevation error even when its process exit code is zero.
       const body = await readFile(join(directory, name));
       report.wfp.push({ port: app.port, file: `.research/${name}`, bytes: body.length, status: body.length ? 'EXPORTED' : 'EMPTY' });
@@ -228,14 +216,14 @@ if (includeWfp) {
       try {
         // Explicit timewindow was rejected locally (FWP_E_INVALID_INTERVAL). Keep
         // the endpoint filter and read the existing buffer using the default interval.
-        await run('netsh.exe', ['wfp', 'show', 'netevents', `file=${join(directory, eventsName)}`, 'protocol=6', 'remoteaddr=127.0.0.1', `remoteport=${app.port}`], { windowsHide: true, timeout: 30000, maxBuffer: 65536 });
+        await run(join(process.env.SystemRoot, 'System32', 'netsh.exe'), ['wfp', 'show', 'netevents', `file=${join(directory, eventsName)}`, 'protocol=6', 'remoteaddr=127.0.0.1', `remoteport=${app.port}`], { windowsHide: true, timeout: 30000, maxBuffer: 65536 });
         report.wfp.push({ kind: 'existing-events', port: app.port, file: `.research/${eventsName}`, bytes: (await readFile(join(directory, eventsName))).length, status: 'EXPORTED' });
       } catch (error) { report.wfp.push({ kind: 'existing-events', port: app.port, status: 'UNAVAILABLE', code: error.code ?? 'UNKNOWN' }); }
     } catch (error) { report.wfp.push({ port: app.port, status: 'EXPORT_FAILED', code: error.code ?? 'UNKNOWN' }); }
   }
   const stateName = `wfp-state-${Date.now()}.xml`;
   try {
-    await run('netsh.exe', ['wfp', 'show', 'state', `file=${join(directory, stateName)}`], { windowsHide: true, timeout: 45000, maxBuffer: 65536 });
+    await run(join(process.env.SystemRoot, 'System32', 'netsh.exe'), ['wfp', 'show', 'state', `file=${join(directory, stateName)}`], { windowsHide: true, timeout: 45000, maxBuffer: 65536 });
     report.wfp.push({ kind: 'registered-callout-state', file: `.research/${stateName}`, bytes: (await readFile(join(directory, stateName))).length, status: 'EXPORTED' });
   } catch (error) { report.wfp.push({ kind: 'registered-callout-state', status: 'UNAVAILABLE', code: error.code ?? 'UNKNOWN' }); }
 }
