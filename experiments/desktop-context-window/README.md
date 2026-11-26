@@ -8,6 +8,27 @@ Context Lens 的独立后台实验为 Codex app-server 增加了按对话设置�
 | rust-v0.169.1 | `context-window.patch` | `c376cf7396eff83ce4c6ac61b9553df142e7a0be` |
 | rust-v0.169.0-alpha.11.1 | `context-window.patch` | `226fa88979b1a9d76dc36f339ee9c5fbdb2c8e7f` |
 
+## 使用官方后台的隔离桌面实验
+
+Windows x64 开发机可在仓库根目录用 PowerShell 7 运行以下探针。它读取当前注册的 Codex 安装，为一次性桌面资料和本地模拟模型创建两条合成对话。源码中的测试适配器编译在本次资料目录内。它只尝试给预先登记的 Target 对话的首次合格恢复请求加上 `512k` 预设。Control 用于核对同一后台的默认容量。该入口未随安装包发布。
+
+```powershell
+pwsh -NoProfile -File experiments/desktop-context-window/probe-desktop-host.ps1 -FixtureAdapter -ObserveSeconds 120
+```
+
+只复测适配器和官方后台时，可用 `-ProtocolOnly` 替换 `-ObserveSeconds 120`，此时不会启动桌面。
+
+若隔离窗口显示 **Context Lens fixture Target**，打开它并发送简短的测试文字。若窗口要求登录，可让测试超时退出。结果位于本次 `.research/desktop-host-<UUID>/report.json`。各字段代表不同阶段：
+
+| 字段 | 通过条件 |
+| --- | --- |
+| `protocolTest` | 测试客户端经适配器恢复两条对话并发送本地模拟回合，官方后台分别报告 Target `486400`、Control `258400`。 |
+| `desktopHandshake` | 测试桌面实际发出初始化请求，收到官方后台与请求 ID 匹配的成功响应。 |
+| `desktopTargetResume` | 测试桌面自然恢复了符合条件的合成 Target，适配器已将预设放入请求。 |
+| `liveCapacityVerified` | 同一桌面恢复请求获得正确对话、模型和提供方的确认，后续新回合收到匹配的 `486400` 原生读数并成功结束。 |
+
+探针成功退出表示桌面握手和进程归属验证通过。桌面真实调档要以最后一项为准。只有模拟对话阶段通过时，不能将该版本列入正式扩容兼容表。
+
 ## 左栏接入实验
 
 Alpha 12 在用户松开滑块、用键盘确认档位或清除预设时生成一次选择。实验桥接进程读取 Loader 的公开 `inspect` 操作，核对当前本地对话、模型和提交时间，然后原子写入该对话自己的 JSON 文件。已有预览不会在启动时自动提交。后台在正常的 `turn/start` 通过会话所有权和输入检查后读取档位，沿用单对话接口的模型上限、当前用量和压缩阈值校验。正在生成的回合保留已捕获的窗口。左栏读数仍来自原生用量事件。

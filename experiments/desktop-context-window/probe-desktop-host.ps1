@@ -3,6 +3,8 @@
 [CmdletBinding(DefaultParameterSetName='Experimental')]
 param([Parameter(Mandatory=$true,ParameterSetName='Experimental')][string]$Cli,
       [Parameter(Mandatory=$true,ParameterSetName='Stock')][switch]$Stock,
+      [Parameter(Mandatory=$true,ParameterSetName='Adapter')][switch]$FixtureAdapter,
+      [Parameter(ParameterSetName='Adapter')][switch]$ProtocolOnly,
       [ValidateRange(0,300)][int]$ObserveSeconds=0,
       [ValidateSet('alias','loader','prototype','built')][string]$Activation='alias',
       [string]$CandidateVersion,
@@ -13,10 +15,18 @@ $packageJson=& powershell.exe -NoProfile -NonInteractive -Command 'Get-AppxPacka
 if($LASTEXITCODE -ne 0 -or !$packageJson){throw 'Cannot identify the installed Codex Store package.'}
 $package=$packageJson | ConvertFrom-Json
 if(!$package){throw 'Missing Codex package.'}
-if($CandidateVersion){
+if($FixtureAdapter){
+    if($Activation -ne 'alias' -or $CandidateVersion -or $package.PackageFamilyName -ne 'OpenAI.Codex_2p2nqsd0c76g0'){
+        throw 'The fixture requires the registered Codex alias and a fresh profile.'
+    }
+}elseif($CandidateVersion){
     if($Activation -ne 'built' -or $CandidateVersion -ne [string]$package.Version){throw 'Candidate must match the registered desktop version.'}
 }elseif([string]$package.Version -notin @('26.1117.3838.0','26.1117.4957.0')){throw 'This desktop build is outside the isolated experiment.'}
-if($Stock){
+$test=Join-Path $root ('.research/desktop-host-'+[guid]::NewGuid())
+if($FixtureAdapter){
+    $candidate=Join-Path $test 'codex.exe'
+    $version='isolated adapter with packaged backend'
+}elseif($Stock){
     $candidate=Join-Path $package.InstallLocation 'app/resources/codex.exe'
     $version='packaged'
 }else{
@@ -26,7 +36,6 @@ if($Stock){
     if($LASTEXITCODE -ne 0 -or $version -notmatch '^codex-cli 0\.171\.0-alpha\.13$'){throw "Unexpected candidate version: $version"}
 }
 $candidate=[IO.Path]::GetFullPath($candidate)
-$test=Join-Path $root ('.research/desktop-host-'+[guid]::NewGuid())
 $profile=Join-Path $test 'electron'
 $backendHome=Join-Path $test 'home'
 [void][IO.Directory]::CreateDirectory($profile)
@@ -40,16 +49,42 @@ $env:CODEX_HOME=$backendHome
 $env:CODEX_ELECTRON_USER_DATA_PATH=$profile
 if(!$Stock){
     $env:CODEX_CLI_PATH=$candidate
-    $env:CONTEXT_LENS_DESKTOP_TIERS='1'
+    if(!$FixtureAdapter){$env:CONTEXT_LENS_DESKTOP_TIERS='1'}
     $env:LENS_EXPECTED_DESKTOP=[string]$package.Version
 }
 $stockPath=[IO.Path]::GetFullPath((Join-Path $package.InstallLocation 'app/resources/codex.exe'))
 $result=[ordered]@{desktopVersion=[string]$package.Version;cliVersion=$version;activation=$Activation;isolatedProfile=$true;started=$false;isolatedMainObserved=$false;candidateObserved=$false;packagedBackendObserved=$false;backendStayedUp=$false;liveCapacityVerified=$false}
 $isolated=$null
+$issued=[Collections.Generic.HashSet[int]]::new()
 $fixture=$null
 $profileArgument='--user-data-dir='+$profile.Replace('\','/')
 try {
-    if($ObserveSeconds){
+    $aliasArgs='"'+$profileArgument+'"'
+    if($FixtureAdapter){
+        $adapterDir=Join-Path $PSScriptRoot 'isolated-adapter'
+        $compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+        & $compiler /nologo /target:exe "/out:$candidate" (Join-Path $adapterDir 'FixtureCli.cs')
+        if($LASTEXITCODE -ne 0){throw 'Could not compile the fixture entry point.'}
+        $node=(Get-Command node.exe).Source
+        [IO.File]::WriteAllLines((Join-Path $test 'node-entry.txt'),[string[]]@($node,(Join-Path $adapterDir 'adapter.mjs')))
+        $fixture=Start-Process -FilePath $node -ArgumentList ('"'+(Join-Path $adapterDir 'prepare.mjs')+'" "'+$test+'" "'+$stockPath+'"') -WorkingDirectory $test -WindowStyle Hidden -PassThru
+        $readyFile=Join-Path $test 'fixture-ready.json'
+        $readyBy=(Get-Date).AddSeconds(100)
+        while(!(Test-Path -LiteralPath $readyFile)){
+            if($fixture.HasExited -or (Get-Date) -gt $readyBy){
+                $failure=Join-Path $test 'fixture-error.txt'
+                if(Test-Path -LiteralPath $failure){throw [IO.File]::ReadAllText($failure)}
+                throw 'The isolated adapter protocol test did not finish.'
+            }
+            Start-Sleep -Milliseconds 200
+        }
+        $ready=Get-Content -LiteralPath $readyFile -Raw | ConvertFrom-Json
+        $syntheticId=([guid]$ready.targetId).ToString()
+        $result.protocolTest=@{target=$ready.target;control=$ready.control}
+        # Address only this alias process. Never open a URI via the system handler.
+        $entryStart=@(Get-Content -LiteralPath (Join-Path $test 'entry-events.txt')).Count
+        if($ProtocolOnly){return}
+    }elseif($ObserveSeconds){
         $fixtureScript=Join-Path $PSScriptRoot 'desktop-fixture.mjs'
         $fixture=Start-Process -FilePath (Get-Command node.exe).Source -ArgumentList ('"'+$fixtureScript+'" "'+$backendHome+'"') -WindowStyle Hidden -PassThru
         $readyBy=(Get-Date).AddSeconds(12)
@@ -86,16 +121,37 @@ try {
         $identity=[CodexScriptLoader.Interop.CodexPackageIdentity]::new($package.PackageFullName,$package.PackageFamilyName,'App',($package.PackageFamilyName+'!App'),[string]$package.Architecture,[version]$package.Version)
         $launchId=[CodexScriptLoader.Interop.ApplicationActivator]::Activate($identity,[string[]]@($profileArgument))
         $result.loaderVersion=$release.version
+    }elseif($FixtureAdapter){
+        $start=[Diagnostics.ProcessStartInfo]::new($desktopAlias)
+        $start.UseShellExecute=$false
+        $start.RedirectStandardError=$true
+        $start.RedirectStandardOutput=$true
+        $start.Environment['APPDATA']=Join-Path $backendHome 'AppData/Roaming'
+        $start.Environment['LOCALAPPDATA']=Join-Path $backendHome 'AppData/Local'
+        $start.Environment['USERPROFILE']=$backendHome
+        $start.WorkingDirectory=$test
+        $start.ArgumentList.Add($profileArgument)
+        $start.ArgumentList.Add('codex://threads/'+$syntheticId)
+        foreach($key in @($start.Environment.Keys)){
+            if($key -match '(?i)(?:API_KEY|ACCESS_TOKEN|AUTH_TOKEN)$|^CODEX_(?:THREAD_ID|APP_SERVER.*|INTERNAL.*)$'){
+                [void]$start.Environment.Remove($key)
+            }
+        }
+        $launched=[Diagnostics.Process]::Start($start)
+        $launchId=$launched.Id
+        $launched.BeginOutputReadLine()
+        $launched.BeginErrorReadLine()
     }else{
-        $null=Start-Process -FilePath $desktopAlias -ArgumentList ('"'+$profileArgument+'"') -WindowStyle $windowStyle -PassThru
+        $null=Start-Process -FilePath $desktopAlias -ArgumentList $aliasArgs -WindowStyle $windowStyle -PassThru
     }
     $result.started=$true
     $deadline=(Get-Date).AddSeconds(40)
+    if($FixtureAdapter -and $ObserveSeconds){$deadline=$deadline.AddSeconds($ObserveSeconds)}
     do {
         $tree=@(Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,Name,ExecutablePath,CommandLine)
         $main=@($tree | Where-Object {$_.ExecutablePath -eq $desktop -and $_.CommandLine -notmatch '--type=' -and $_.CommandLine.Contains($profileArgument)})
         if($main.Count -ne 1){Start-Sleep -Milliseconds 400;continue}
-        if($Activation -in @('prototype','built')){
+        if($FixtureAdapter -or $Activation -in @('prototype','built')){
             $result.returnedPidMatchesDesktop=($main[0].ProcessId -eq $launchId)
             $result.desktopParentIsActivator=($main[0].ParentProcessId -eq $PID)
         }
@@ -108,8 +164,27 @@ try {
             $pids+=$next
         }
         $servers=@($tree | Where-Object {$_.ProcessId -in $pids -and $_.CommandLine -match '(?:\s|")app-server(?:\s|")' -and $_.CommandLine -match '(?:\s|")--analytics-default-enabled(?:\s|"|$)'})
+        if($FixtureAdapter){
+            foreach($entry in @($tree | Where-Object {$_.ProcessId -in $pids -and $_.ExecutablePath -eq $candidate})){
+                $mark=Join-Path $test ('allow-'+$entry.ProcessId+'.fixture')
+                if($issued.Add([int]$entry.ProcessId)){[IO.File]::WriteAllText($mark,'isolated descendant')}
+            }
+            $servers=@($tree | Where-Object {$_.ProcessId -in $pids -and $_.CommandLine -match '(?:\s|")app-server(?:\s|"|$)'})
+            $result.packagedCliDescendant=$result.packagedCliDescendant -or @($tree | Where-Object {$_.ProcessId -in $pids -and $_.ExecutablePath -eq $stockPath}).Count -gt 0
+        }
         if(@($servers | Where-Object ExecutablePath -eq $stockPath).Count){$result.packagedBackendObserved=$true}
         $found=@($servers | Where-Object ExecutablePath -eq $candidate)
+        if($FixtureAdapter){
+            if($found.Count){
+                $result.candidateObserved=$true
+                $backend=Get-Process -Id $found[0].ProcessId -ErrorAction SilentlyContinue
+                if($backend -and ((Get-Date)-$backend.StartTime).TotalSeconds -ge 3){$result.backendStayedUp=$true}
+            }
+            $events=@(Get-Content -LiteralPath (Join-Path $test 'adapter-events.txt') | Select-Object -Skip $ready.eventsBeforeDesktop)
+            if($result.backendStayedUp -and $result.packagedBackendObserved -and $events -contains 'target-turn-486400'){break}
+            Start-Sleep -Milliseconds 300
+            continue
+        }
         if($found.Count){
             $result.candidateObserved=$true
             $backend=Get-Process -Id $found[0].ProcessId -ErrorAction SilentlyContinue
@@ -145,10 +220,21 @@ try {
         $result.testInstanceExited=$isolated.HasExited
     }
     if($fixture -and !$fixture.HasExited){$fixture.Kill();$null=$fixture.WaitForExit(5000)}
+    if($FixtureAdapter -and $launched){$launched.Dispose()}
+    if($FixtureAdapter -and $ready){
+        $entries=@(Get-Content -LiteralPath (Join-Path $test 'entry-events.txt') | Select-Object -Skip $entryStart)
+        $result.desktopEntryInvoked=$entries.Count -gt 0
+        $result.desktopEntryProfileMismatch=$entries -contains 'profile-mismatch'
+        $events=@(Get-Content -LiteralPath (Join-Path $test 'adapter-events.txt') | Select-Object -Skip $ready.eventsBeforeDesktop)
+        $result.desktopHandshake=$events -contains 'initialize-acknowledged'
+        $result.desktopTargetResume=$events -contains 'target-enriched'
+        $result.liveCapacityVerified=$result.desktopHandshake -and $result.desktopTargetResume -and $events -contains 'target-turn-486400'
+    }
     $json=$result | ConvertTo-Json
     [IO.File]::WriteAllText((Join-Path $test 'report.json'),$json)
     if($ReportPath){[IO.File]::WriteAllText($ReportPath,$json)}
     $json
 }
 if(!$result.candidateObserved -or !$result.backendStayedUp -or ($Activation -in @('prototype','built') -and !$result.returnedPidMatchesDesktop)){exit 1}
+if($FixtureAdapter -and (!$result.desktopHandshake -or !$result.packagedBackendObserved -or !$result.testInstanceExited)){exit 1}
 if($Activation -eq 'built' -and (!$result.desktopParentIsActivator -or $result.packagedBackendObserved -or !$result.testInstanceExited)){exit 1}
