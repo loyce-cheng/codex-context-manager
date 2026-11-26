@@ -20,7 +20,7 @@ test('only the first eligible synthetic resume gains the three capacity settings
   assert.deepEqual(result.params,{...params,config:{sample:true,model_context_window:512000,
     model_auto_compact_token_limit:462080,model_auto_compact_token_limit_scope:'total'}});
   assert.equal(filter(request),request);
-  assert.deepEqual(events,['target-enriched']);
+  assert.deepEqual(events,['target-resume-received','target-enriched','target-resume-received']);
 });
 
 test('explicit overrides, inline history and already active targets preserve native requests',()=>{
@@ -61,6 +61,12 @@ test('a desktop receipt requires an acknowledged resume and fresh matching compl
   notify('thread/tokenUsage/updated',{threadId:'other',turnId:'new',tokenUsage:{modelContextWindow:486400}});
   notify('turn/completed',{turn});
   assert.deepEqual(events,['initialize-acknowledged']);
+  notify('turn/started',{turn});
+  notify('thread/tokenUsage/updated',{turnId:'new',tokenUsage:{modelContextWindow:486400}});
+  notify('turn/completed',{turn});
+  assert.deepEqual(events,['initialize-acknowledged']);
+  receipts.request({method:'turn/start',id:14,params:{threadId}});
+  send({id:14,result:{turn}});
   notify('turn/started',{turn});
   notify('thread/tokenUsage/updated',{turnId:'new',tokenUsage:{modelContextWindow:486400}});
   notify('turn/completed',{turn});

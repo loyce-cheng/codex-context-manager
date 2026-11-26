@@ -2,17 +2,17 @@
 
 **简体中文** | [English](README.en.md)
 
-> **面向 Windows x64 Codex 桌面的本地上下文窗口监控与单对话挡位管理工具（`v0.1.0`）**
+> **面向 Windows x64 Codex 桌面的本地上下文窗口监控与单对话挡位管理工具（`v0.1.1`）**
 >
 > 把订阅额度留给仍需推理的内容。左栏显示当前对话还能装下多少上下文，帮助你决定何时继续、何时压缩，以及哪一条对话值得临时扩容。
 >
 > *原有 Context Lens 安装可直接覆盖升级；开始菜单、快捷方式与左栏扩展标识继续沿用 **Context Lens**。*
 
-[下载 Windows x64 安装包](https://github.com/loyce-cheng/codex-context-manager/releases/download/v0.1.0/Codex-Context-Manager-0.1.0-windows-x64-Setup.exe) · [查看 0.1.0 发布文件与 SHA-256 校验值](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0)
+[下载 Windows x64 安装包](https://github.com/loyce-cheng/codex-context-manager/releases/download/v0.1.1/Codex-Context-Manager-0.1.1-windows-x64-Setup.exe) · [查看 0.1.1 发布文件与 SHA-256 校验值](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.1)
 
 ---
 
-下载链接指向已发布的 `v0.1.0`。`main` 上的后续源码修复见[审查记录](docs/REVIEW-0.1.0.md)。
+下载链接指向 `v0.1.1`。上一版源码审查见[审查记录](docs/REVIEW-0.1.0.md)。
 
 ## 目录
 
@@ -119,7 +119,7 @@
 ### 方式一：Windows x64 一键安装包（推荐）
 
 1. 先安装 Windows 版 Codex，保存工作并完全退出 Codex 与 Codex Script Loader。
-2. 从 Release 下载并运行 `Codex-Context-Manager-0.1.0-windows-x64-Setup.exe`（未签名程序，下载后可用 `Get-FileHash -Algorithm SHA256` 对照 Release 中的 `SHA256SUMS.txt` 核验）。
+2. 从 Release 下载并运行 `Codex-Context-Manager-0.1.1-windows-x64-Setup.exe`（未签名程序，下载后可用 `Get-FileHash -Algorithm SHA256` 对照 Release 中的 `SHA256SUMS.txt` 核验）。
    - 默认选项安装 **「仅监控」**；当本机 Codex 与 Loader 版本命中已验收实验组合时，可勾选 **「监控和实验扩容」**。
    - 安装包内置 Node.js 运行时与便携 Loader；已有兼容共享 Loader 的电脑会优先复用现有安装，保留其他扩展的配置。
 3. 从开始菜单 **Context Lens** 文件夹启动：
@@ -130,7 +130,7 @@
 
 ### 方式二：仅手动导入左栏扩展 ZIP
 
-如果你已独立安装 [Codex Script Loader](https://github.com/JHees/codex-script-loader) 且只需要左栏监控，可直接下载 `context-lens-sidebar-0.1.0.zip`，在 Codex 设置的 Script Loader 页面导入并启用（无需 Node、Python 或管理员权限）。
+如果你已独立安装 [Codex Script Loader](https://github.com/JHees/codex-script-loader) 且只需要左栏监控，可直接下载 `context-lens-sidebar-0.1.1.zip`，在 Codex 设置的 Script Loader 页面导入并启用（无需 Node、Python 或管理员权限）。
 
 > **提示**：单独导入扩展 ZIP 仅提供左栏监控与档位预设保存；单对话真实调档依赖完整安装包中的已验收实验后台与桥接组件。
 
@@ -175,7 +175,7 @@
 - **左栏显示两个「—」？** 打开已有用量的本地对话，或在新对话中完成一个回合。若「查看状态」提示页面用量接口未适配，重新发送消息无法修复接口，请查看项目的新版本。
 - **选了 `512k` 却仍然显示 `258.4k`？** 普通模式只保存预设。实验模式中请在同一对话、同一模型看到「已提交」后发送消息。模型有效比例为 95% 时，`512k` 对应 `486.4k`；以随后收到的原生读数为准。
 - **更新之后只剩监控？** 用原快捷方式启动，启动器会核对新页面资源。实验后台按版本组合单独验收；若「查看状态」提示尚待验收，可继续使用已通过检查的监控功能。无需手改版本号。
-- **找不到「恢复 Loader」？** 发布页也提供独立的 `Codex-Context-Manager-0.1.0-Recovery.exe`。保存工作、退出 Codex 后再运行。
+- **找不到「恢复 Loader」？** 发布页也提供独立的 `Codex-Context-Manager-0.1.1-Recovery.exe`。保存工作、退出 Codex 后再运行。
 - **怀疑防火墙拦截？** 先用「查看状态」排查。源码工作区准备好随包运行时后可执行 `Diagnose-Sidebar.cmd`。网络诊断与可撤销的回环规则脚本供源码维护者按需使用，安装包用户无需为日常启动调整防火墙。
 
 ---
@@ -205,11 +205,11 @@ python scripts/package-sidebar.py
 pwsh -File scripts/build-launcher.ps1
 ```
 
-在当前开发源码中，实验快捷方式遇到未验收的更新时，会先打开普通监控，再用本机模拟对话检查官方后台。测试覆盖同一对话调档、另一个对话保持原容量、冷启动恢复以及自动压缩。结果按桌面版本、官方后台文件 SHA-256 和测试版本缓存；换版本或后台文件变化后会重新检查。未能确认时隔天可自动重试，手动立即重跑可用 `npm run verify:stock-resume -- --force`。结果保存在 `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`。此检查使用临时资料目录，模拟回合在本机完成。通过后仅说明官方后台支持这些操作，真实桌面的左栏接入仍在开发中。`v0.1.0` 安装包不含此检查。
+在 0.1.1 安装包中，实验快捷方式遇到未验收的更新时，会先打开普通监控，再用本机模拟对话检查官方后台。测试覆盖同一对话调档、另一个对话保持原容量、冷启动恢复以及自动压缩。结果按桌面版本、官方后台文件 SHA-256 和测试版本缓存；换版本或后台文件变化后会重新检查。未能确认时隔天可自动重试，手动立即重跑可用 `npm run verify:stock-resume -- --force`。结果保存在 `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`。此检查使用临时资料目录，模拟回合在本机完成。通过后仅说明官方后台支持这些操作，真实桌面的左栏接入仍在开发中。
 
 更多文档：
 - 本次源码审查与修复范围：[0.1.0 审查记录](docs/REVIEW-0.1.0.md)
-- 发布说明：[docs/RELEASE-0.1.0.md](docs/RELEASE-0.1.0.md)
+- 发布说明：[docs/RELEASE-0.1.1.md](docs/RELEASE-0.1.1.md)
 - 左栏扩展细节：[native-sidebar/README.md](native-sidebar/README.md)
 - 单对话扩容后台原型与复现：[experiments/desktop-context-window/README.md](experiments/desktop-context-window/README.md)
 - 第三方运行时与许可说明：[third_party/README.md](third_party/README.md)

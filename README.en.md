@@ -2,17 +2,17 @@
 
 [简体中文](README.md) | **English**
 
-> **Local context window monitor and per-conversation tier manager for Windows x64 Codex Desktop (`v0.1.0`)**
+> **Local context window monitor and per-conversation tier manager for Windows x64 Codex Desktop (`v0.1.1`)**
 >
 > Spend your subscription allowance on context the task still needs. The sidebar shows how much room the current chat has left, helping you decide when to continue, when to compact, and which chat is worth expanding.
 >
 > *Existing Context Lens installations can upgrade in place; Start Menu entries, shortcuts, and the sidebar extension ID continue to use **Context Lens**.*
 
-[Download the Windows x64 installer](https://github.com/loyce-cheng/codex-context-manager/releases/download/v0.1.0/Codex-Context-Manager-0.1.0-windows-x64-Setup.exe) · [View the 0.1.0 assets and SHA-256 checksums](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0)
+[Download the Windows x64 installer](https://github.com/loyce-cheng/codex-context-manager/releases/download/v0.1.1/Codex-Context-Manager-0.1.1-windows-x64-Setup.exe) · [View the 0.1.1 assets and SHA-256 checksums](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.1)
 
 ---
 
-The downloads are the published `v0.1.0` binaries. For subsequent source fixes on `main`, see the [review decisions](docs/REVIEW-0.1.0.md).
+The downloads are the published `v0.1.1` binaries. For the previous release review, see the [review decisions](docs/REVIEW-0.1.0.md).
 
 ## Table of Contents
 
@@ -119,7 +119,7 @@ Treat context tiers like a **manual transmission** rather than a set-and-forget 
 ### Option 1: Windows x64 Installer (Recommended)
 
 1. Install Windows Codex Desktop first, then save your work and fully exit both Codex and Codex Script Loader.
-2. Download and run `Codex-Context-Manager-0.1.0-windows-x64-Setup.exe` from the Release page (unsigned Windows binary; verify integrity with `Get-FileHash -Algorithm SHA256` against `SHA256SUMS.txt`).
+2. Download and run `Codex-Context-Manager-0.1.1-windows-x64-Setup.exe` from the Release page (unsigned Windows binary; verify integrity with `Get-FileHash -Algorithm SHA256` against `SHA256SUMS.txt`).
    - The default option installs **Monitor Only**; when your installed Codex Desktop and Loader match a verified combination, **Monitor + Experimental Expansion** becomes selectable.
    - Bundles the pinned Node.js runtime and portable Loader; existing compatible shared Loader installations are automatically reused while preserving other extensions’ configuration.
 3. Launch from the Start Menu **Context Lens** folder:
@@ -130,7 +130,7 @@ Treat context tiers like a **manual transmission** rather than a set-and-forget 
 
 ### Option 2: Standalone Sidebar Extension ZIP
 
-If you already manage [Codex Script Loader](https://github.com/JHees/codex-script-loader) yourself and only want monitoring, download `context-lens-sidebar-0.1.0.zip` and import/enable it in Codex Settings → Script Loader (no Node, Python, or admin rights required).
+If you already manage [Codex Script Loader](https://github.com/JHees/codex-script-loader) yourself and only want monitoring, download `context-lens-sidebar-0.1.1.zip` and import/enable it in Codex Settings → Script Loader (no Node, Python, or admin rights required).
 
 > **Note**: Importing only the sidebar ZIP provides live monitoring and preset saving; actual per-conversation backend expansion requires the verified experimental components from the full installer.
 
@@ -175,7 +175,7 @@ If you already manage [Codex Script Loader](https://github.com/JHees/codex-scrip
 - **Two dashes in the sidebar?** Open a local chat with usage history, or complete one turn in a new chat. If Status reports an unsupported usage interface, check for a project update.
 - **Selected `512k` but still seeing `258.4k`?** Standard mode only saves the preset. In experimental mode, wait for *Submitted*, then send a message in the same chat with the same model. At a 95% effective ratio, `512k` corresponds to `486.4k`. Use the subsequent native reading to confirm it.
 - **Only monitoring works after an update?** Open the usual shortcut so the launcher can check the new page assets. Experimental builds are verified separately for each desktop combination. If Status reports pending verification, monitoring remains available when its own checks pass. You can leave version files alone.
-- **No Recovery shortcut?** The release also includes a standalone `Codex-Context-Manager-0.1.0-Recovery.exe`. Save your work and exit Codex before running it.
+- **No Recovery shortcut?** The release also includes a standalone `Codex-Context-Manager-0.1.1-Recovery.exe`. Save your work and exit Codex before running it.
 - **Suspected firewall issue?** Start with Status. In a source checkout with the bundled runtime prepared, maintainers can run `Diagnose-Sidebar.cmd`. The optional network diagnostics and reversible loopback-rule scripts are source tools. Ordinary installs require no firewall changes for day-to-day starts in a working setup.
 
 ---
@@ -205,12 +205,12 @@ python scripts/package-sidebar.py
 pwsh -File scripts/build-launcher.ps1
 ```
 
-In the development source, when an update falls outside the verified experimental combinations, the experimental shortcut opens monitoring first and then checks the stock backend with local simulated chats. The check covers per-chat adjustment, an unchanged control chat, cold resume and automatic compaction. Results are cached by desktop version, backend SHA-256 and test revision. An inconclusive result is retried after 24 hours or immediately with `npm run verify:stock-resume -- --force`. The summary lives in `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`. Test turns run locally in a temporary profile. Passing confirms backend behavior only. Desktop sidebar integration is still in development. The published `v0.1.0` installer predates this check.
+In the 0.1.1 installer, when an update falls outside the verified experimental combinations, the experimental shortcut opens monitoring first and then checks the stock backend with local simulated chats. The check covers per-chat adjustment, an unchanged control chat, cold resume and automatic compaction. Results are cached by desktop version, backend SHA-256 and test revision. An inconclusive result is retried after 24 hours or immediately with `npm run verify:stock-resume -- --force`. The summary lives in `%LOCALAPPDATA%\ContextLens\stock-resume-check.json`. Test turns run locally in a temporary profile. Passing confirms backend behavior only. Desktop sidebar integration is still in development.
 
 Additional documentation:
 
 - Source review and fixes (Chinese / English): [0.1.0 review decisions](docs/REVIEW-0.1.0.md)
-- Release notes: [docs/RELEASE-0.1.0.md](docs/RELEASE-0.1.0.md)
+- Release notes: [docs/RELEASE-0.1.1.md](docs/RELEASE-0.1.1.md)
 - Native sidebar details: [native-sidebar/README.md](native-sidebar/README.md)
 - Experimental per-thread window backend & reproduction: [experiments/desktop-context-window/README.md](experiments/desktop-context-window/README.md)
 - Third-party runtimes & notices: [third_party/README.md](third_party/README.md)

@@ -1,5 +1,5 @@
 /** Pure calculations shared by the local reader and the UI. Tokens use decimal k. */
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 export const finite = value => typeof value === 'number' && Number.isFinite(value);
 export const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 export const validTokens = value => Number.isSafeInteger(value) && value >= 0;

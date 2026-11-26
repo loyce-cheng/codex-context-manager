@@ -5,6 +5,7 @@ param([Parameter(Mandatory=$true,ParameterSetName='Experimental')][string]$Cli,
       [Parameter(Mandatory=$true,ParameterSetName='Stock')][switch]$Stock,
       [Parameter(Mandatory=$true,ParameterSetName='Adapter')][switch]$FixtureAdapter,
       [Parameter(ParameterSetName='Adapter')][switch]$ProtocolOnly,
+      [Parameter(ParameterSetName='Adapter')][switch]$RequireLiveTurn,
       [ValidateRange(0,300)][int]$ObserveSeconds=0,
       [ValidateSet('alias','loader','prototype','built')][string]$Activation='alias',
       [string]$CandidateVersion,
@@ -16,6 +17,7 @@ if($LASTEXITCODE -ne 0 -or !$packageJson){throw 'Cannot identify the installed C
 $package=$packageJson | ConvertFrom-Json
 if(!$package){throw 'Missing Codex package.'}
 if($FixtureAdapter){
+    if($RequireLiveTurn -and $ProtocolOnly){throw 'A live turn requires the desktop window.'}
     if($Activation -ne 'alias' -or $CandidateVersion -or $package.PackageFamilyName -ne 'OpenAI.Codex_2p2nqsd0c76g0'){
         throw 'The fixture requires the registered Codex alias and a fresh profile.'
     }
@@ -181,6 +183,16 @@ try {
                 if($backend -and ((Get-Date)-$backend.StartTime).TotalSeconds -ge 3){$result.backendStayedUp=$true}
             }
             $events=@(Get-Content -LiteralPath (Join-Path $test 'adapter-events.txt') | Select-Object -Skip $ready.eventsBeforeDesktop)
+            # Windows can receive the initial deep link before the renderer is
+            # ready. Re-deliver once to the same profile, after a real handshake.
+            if($RequireLiveTurn -and !$result.deepLinkRetried -and $result.returnedPidMatchesDesktop -and
+               $result.packagedBackendObserved -and $events -contains 'initialize-acknowledged' -and
+               $events -notcontains 'target-resume-received'){
+                $repeat=[Diagnostics.Process]::Start($start)
+                $repeat.BeginOutputReadLine()
+                $repeat.BeginErrorReadLine()
+                $result.deepLinkRetried=$true
+            }
             if($result.backendStayedUp -and $result.packagedBackendObserved -and $events -contains 'target-turn-486400'){break}
             Start-Sleep -Milliseconds 300
             continue
@@ -221,12 +233,17 @@ try {
     }
     if($fixture -and !$fixture.HasExited){$fixture.Kill();$null=$fixture.WaitForExit(5000)}
     if($FixtureAdapter -and $launched){$launched.Dispose()}
+    if($FixtureAdapter -and $repeat){$repeat.Dispose()}
     if($FixtureAdapter -and $ready){
         $entries=@(Get-Content -LiteralPath (Join-Path $test 'entry-events.txt') | Select-Object -Skip $entryStart)
         $result.desktopEntryInvoked=$entries.Count -gt 0
         $result.desktopEntryProfileMismatch=$entries -contains 'profile-mismatch'
         $events=@(Get-Content -LiteralPath (Join-Path $test 'adapter-events.txt') | Select-Object -Skip $ready.eventsBeforeDesktop)
         $result.desktopHandshake=$events -contains 'initialize-acknowledged'
+        $result.desktopLoginRequired=$events -contains 'account-login-required'
+        $result.desktopTargetListed=$events -contains 'target-listed'
+        $result.desktopResumeReceived=$events -contains 'target-resume-received'
+        $result.desktopTurnRequested=$events -contains 'target-turn-requested'
         $result.desktopTargetResume=$events -contains 'target-enriched'
         $result.liveCapacityVerified=$result.desktopHandshake -and $result.desktopTargetResume -and $events -contains 'target-turn-486400'
     }
@@ -237,4 +254,5 @@ try {
 }
 if(!$result.candidateObserved -or !$result.backendStayedUp -or ($Activation -in @('prototype','built') -and !$result.returnedPidMatchesDesktop)){exit 1}
 if($FixtureAdapter -and (!$result.desktopHandshake -or !$result.packagedBackendObserved -or !$result.testInstanceExited)){exit 1}
+if($RequireLiveTurn -and !$result.liveCapacityVerified){exit 2}
 if($Activation -eq 'built' -and (!$result.desktopParentIsActivator -or $result.packagedBackendObserved -or !$result.testInstanceExited)){exit 1}

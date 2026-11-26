@@ -13,16 +13,20 @@ const research = fileURLToPath(new URL('../../../.research/', import.meta.url));
 const fixtureModel = {slug:'gpt-6-astra',context_window:272000,max_context_window:872000,effective_context_window_percent:95};
 const maxFrame = 128 * 1024;
 
-export function fixtureRequestFilter(seed, event, onInitialize=()=>{}, onEnrich=()=>{}) {
+export function fixtureRequestFilter(seed, event, onInitialize=()=>{}, onEnrich=()=>{}, onRequest=()=>{}) {
   let available = true;
   return function filter(frame) {
     if (!frame) { available = false; return; } // Oversize frame, identity no longer certain.
     let message;
     try { message = JSON.parse(frame); } catch { available = false; return frame; }
+    if(message?.method && message.id!=null)onRequest(message);
     if (message?.method === 'initialize' && message.id != null) onInitialize(message.id);
     if (message?.method === 'initialized') event('initialized');
     const params = message?.params;
-    if (!available || !seed || params?.threadId !== seed.snapshot.threadId) return frame;
+    if (!seed || params?.threadId !== seed.snapshot.threadId) return frame;
+    if(message.method==='thread/resume')event('target-resume-received');
+    if(message.method==='turn/start')event('target-turn-requested');
+    if(!available)return frame;
     if (message.method === 'thread/read') return frame;
     available = false;
     if (message.method !== 'thread/resume' || message.id == null) return frame;
@@ -46,12 +50,21 @@ export function fixtureRequestFilter(seed, event, onInitialize=()=>{}, onEnrich=
 // Count only a new native turn after the matching resume has been accepted.
 // Historical token usage included in a resume response is never a receipt.
 export function fixtureReceipts(seed,event) {
-  let initId, resumeId, resumed=false, turnId, measured=false;
+  let initId, resumeId, resumed=false, turnId, measured=false, turnRequest, returnedTurn;
+  let accountQuery, listQuery;
   return {
     initialize(id){initId=id;},
     enrich(id){resumeId=id;},
+    request(msg){
+      if(msg.method==='account/read')accountQuery=msg.id;
+      if(msg.method==='thread/list')listQuery=msg.id;
+      if(resumed && msg.method==='turn/start' && msg.params?.threadId===seed?.snapshot.threadId){
+        turnRequest=msg.id;
+        returnedTurn=undefined;
+      }
+    },
     frame(bytes){
-      if(!bytes || (initId===undefined && resumeId===undefined && !resumed))return bytes;
+      if(!bytes || (initId===undefined && resumeId===undefined && accountQuery===undefined && listQuery===undefined && !resumed))return bytes;
       let msg;
       try {msg=JSON.parse(bytes);} catch {return bytes;}
       if(initId!==undefined && msg?.id===initId && typeof msg.result?.userAgent==='string'){
@@ -59,10 +72,24 @@ export function fixtureReceipts(seed,event) {
       }
       const target=seed?.snapshot;
       if(!target)return bytes;
+      if(accountQuery!==undefined && msg?.id===accountQuery && !msg.method){
+        accountQuery=undefined;
+        if(msg.result?.account===null)
+          event(msg.result.requiresOpenaiAuth===true?'account-login-required':'account-no-login');
+      }
+      if(listQuery!==undefined && msg?.id===listQuery && !msg.method){
+        listQuery=undefined;
+        if(Array.isArray(msg.result?.data))
+          event(msg.result.data.some(t=>t.id===target.threadId)?'target-listed':'other-list-page');
+      }
       if(resumeId!==undefined && msg?.id===resumeId && !msg.method){
         const res=msg.result;
         resumed=res?.thread?.id===target.threadId && res.model===target.model && res.modelProvider===target.modelProvider;
         resumeId=undefined;
+      }
+      if(turnRequest!==undefined && msg?.id===turnRequest && !msg.method){
+        turnRequest=undefined;
+        returnedTurn=msg.result?.turn?.id;
       }
       const p=msg?.params;
       if(!resumed || p?.threadId!==target.threadId)return bytes;
@@ -71,7 +98,7 @@ export function fixtureReceipts(seed,event) {
       }else if(typeof turnId==='string' && msg.method==='thread/tokenUsage/updated' && p.turnId===turnId){
         measured=p.tokenUsage?.modelContextWindow===486400;
       }else if(turnId && msg.method==='turn/completed' && p.turn?.id===turnId){
-        if(p.turn.status==='completed' && measured) {event('target-turn-486400');resumed=false;}
+        if(p.turn.status==='completed' && measured && returnedTurn===turnId) {event('target-turn-486400');resumed=false;}
         turnId=undefined;
       }
       return bytes;
@@ -132,7 +159,7 @@ async function main(dir,args) {
     const event = kind => appendFileSync(join(dir,'adapter-events.txt'),kind+'\n');
     event('server-started');
     const receipts=fixtureReceipts(seed,event);
-    const filter=fixtureRequestFilter(seed,event,receipts.initialize,receipts.enrich);
+    const filter=fixtureRequestFilter(seed,event,receipts.initialize,receipts.enrich,receipts.request);
     output=pipeline(child.stdout,source=>filterFrames(source,receipts.frame),process.stdout);
     output.catch(()=>{if(child.exitCode===null)child.kill();});
     const input = pipeline(process.stdin,source=>filterFrames(source,filter),child.stdin);

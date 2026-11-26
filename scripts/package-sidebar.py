@@ -25,7 +25,7 @@ if options.review_source:
     review_zip = root / 'dist' / f'{review_name}.zip'
     paths = [root / name for name in ('README.md', 'README.en.md', 'LICENSE', 'package.json',
                                       'third_party/README.md', 'third_party/NODE-LICENSE.txt',
-                                      'docs/RELEASE-0.1.0.md', 'docs/REVIEW-0.1.0.md')]
+                                      f'docs/RELEASE-{manifest["version"]}.md', 'docs/REVIEW-0.1.0.md')]
     paths.extend(root.glob('*.cmd'))
     paths.extend((root / 'third_party/acorn').glob('*'))
     paths.extend((root / 'docs/assets').glob('*.gif'))

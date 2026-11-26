@@ -1,8 +1,8 @@
-# Context Lens 左栏扩展 · Sidebar extension 0.1.0
+# Context Lens 左栏扩展 · Sidebar extension 0.1.1
 
 ## 安装与使用
 
-本 ZIP 是 Windows 版 Codex Script Loader 的 renderer 扩展。已有兼容 Loader 时，在 Codex 设置的 Script Loader 页面导入并启用 ZIP，再通过 Loader 打开一条本地对话。需要安装 Loader 或使用实验扩容时，可使用完整的 [Windows 安装包](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0)。
+本 ZIP 是 Windows 版 Codex Script Loader 的 renderer 扩展。已有兼容 Loader 时，在 Codex 设置的 Script Loader 页面导入并启用 ZIP，再通过 Loader 打开一条本地对话。需要安装 Loader 或使用实验扩容时，可使用完整的 [Windows 安装包](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.1)。
 
 - **读数**：窄条显示 Codex 上报的有效容量和剩余百分比。前台每 500 毫秒检查一次当前对话，页面隐藏时暂停。读数随原生用量事件更新。两个「—」表示暂时没有可核对的用量；可打开已有记录的本地对话，或在新对话中完成一个回合。剩余 ≤ 20% 时显示 5 秒提醒，恢复到 > 25% 后可再次触发。
 - **移动**：按住六点握柄向右拖出成为横向悬浮条。右击可切换竖向或固定回左栏。空间不足时停靠条会让出位置。显示偏好保存在本机。
@@ -12,7 +12,7 @@
 
 ## Installation and use
 
-This ZIP is a renderer extension for Codex Script Loader on Windows. With a compatible Loader installed, import and enable the ZIP in Codex Settings → Script Loader. Launch Codex through Loader and open a local chat. For a bundled Loader or experimental tier changes, use the [Windows installer](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0).
+This ZIP is a renderer extension for Codex Script Loader on Windows. With a compatible Loader installed, import and enable the ZIP in Codex Settings → Script Loader. Launch Codex through Loader and open a local chat. For a bundled Loader or experimental tier changes, use the [Windows installer](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.1).
 
 - **Read the meter.** It shows effective capacity reported by Codex and the percentage remaining. The visible page checks the current chat every 500 ms and pauses while hidden. Readings change when Codex supplies usage. Two dashes mean usage is unavailable. Open an existing local chat or complete a turn in a new one. At ≤ 20% remaining a five-second warning appears. It re-arms above 25%.
 - **Move the meter.** Drag right from the six-dot grip to float horizontally. Right-click to switch orientation or dock again. The dock yields space to navigation controls. Layout preferences are stored locally.

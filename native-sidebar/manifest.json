@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "local.context-lens.sidebar",
   "name": "Context Lens · 左栏窄条",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "显示当前对话的有效容量和剩余百分比，按模型预览容量档位，支持实验后台按对话应用。",
   "main": "index.js",
   "scope": "renderer",

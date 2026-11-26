@@ -13,10 +13,10 @@ Context Lens 的独立后台实验为 Codex app-server 增加了按对话设置�
 Windows x64 开发机可在仓库根目录用 PowerShell 7 运行以下探针。它读取当前注册的 Codex 安装，为一次性桌面资料和本地模拟模型创建两条合成对话。源码中的测试适配器编译在本次资料目录内。它只尝试给预先登记的 Target 对话的首次合格恢复请求加上 `512k` 预设。Control 用于核对同一后台的默认容量。该入口未随安装包发布。
 
 ```powershell
-pwsh -NoProfile -File experiments/desktop-context-window/probe-desktop-host.ps1 -FixtureAdapter -ObserveSeconds 120
+pwsh -NoProfile -File experiments/desktop-context-window/probe-desktop-host.ps1 -FixtureAdapter -RequireLiveTurn -ObserveSeconds 300
 ```
 
-只复测适配器和官方后台时，可用 `-ProtocolOnly` 替换 `-ObserveSeconds 120`，此时不会启动桌面。
+只复测适配器和官方后台时，使用 `-FixtureAdapter -ProtocolOnly`，此时不会启动桌面。使用 `-RequireLiveTurn` 时，若桌面只完成了握手，缺少与本次发送请求对应的新回合容量回执，脚本返回退出码 2。
 
 若隔离窗口显示 **Context Lens fixture Target**，打开它并发送简短的测试文字。若窗口要求登录，可让测试超时退出。结果位于本次 `.research/desktop-host-<UUID>/report.json`。各字段代表不同阶段：
 
@@ -27,7 +27,7 @@ pwsh -NoProfile -File experiments/desktop-context-window/probe-desktop-host.ps1 
 | `desktopTargetResume` | 测试桌面自然恢复了符合条件的合成 Target，适配器已将预设放入请求。 |
 | `liveCapacityVerified` | 同一桌面恢复请求获得正确对话、模型和提供方的确认，后续新回合收到匹配的 `486400` 原生读数并成功结束。 |
 
-探针成功退出表示桌面握手和进程归属验证通过。桌面真实调档要以最后一项为准。只有模拟对话阶段通过时，不能将该版本列入正式扩容兼容表。
+默认桌面探针检查握手和进程归属。严格模式还要求最后一项通过。报告中的 `desktopTargetListed`、`desktopResumeReceived` 和 `desktopTurnRequested` 分别记录目标出现在对话列表、桌面请求恢复、桌面发送新回合三个阶段。
 
 ## 左栏接入实验
 
