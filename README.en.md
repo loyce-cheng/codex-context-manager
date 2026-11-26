@@ -4,6 +4,8 @@
 
 > **Local context window monitor and per-conversation tier manager for Windows x64 Codex Desktop (`v0.1.0`)**
 >
+> Spend your subscription allowance on context the task still needs. The sidebar shows how much room the current chat has left, helping you decide when to continue, when to compact, and which chat is worth expanding.
+>
 > *Existing Context Lens installations can upgrade in place; Start Menu entries, shortcuts, and the sidebar extension ID continue to use **Context Lens**.*
 
 [Download the Windows x64 installer](https://github.com/loyce-cheng/codex-context-manager/releases/download/v0.1.0/Codex-Context-Manager-0.1.0-windows-x64-Setup.exe) · [View the 0.1.0 assets and SHA-256 checksums](https://github.com/loyce-cheng/codex-context-manager/releases/tag/v0.1.0)
@@ -33,9 +35,14 @@ The downloads are the published `v0.1.0` binaries. For subsequent source fixes o
 
 ## Why Manage the Context Window
 
-The context window determines how much material Codex can retain in the current chat. A larger window can keep related files, test output, and design constraints together. It can also retain obsolete logs and abandoned attempts for longer. With a smaller window, compaction can occur sooner and a later turn may need to read key files again.
+The window sets an upper bound on what a request can hold. Moving from `272k` to `512k` does not itself create `240k` input tokens. The difference shows up as history accumulates. A larger window can defer compaction, so old logs may return as input on each subsequent request. A smaller window can compact sooner, sometimes forcing Codex to read a file again. Sizing each chat for its task can reduce both irrelevant input and repeated reads, helping the same subscription allowance cover more useful work. Actual usage also depends on the model, task, reasoning, and tools. [How OpenAI describes Codex subscription usage](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan)
 
-The sidebar shows the effective capacity and remaining percentage for the selected chat. Verified experimental combinations also support per-chat tier changes. The percentage measures context space. It cannot tell you the account quota, cache hit rate, or cost.
+**Long context can add up even when every request hits the cache.** Token-based Codex credit plans charge a lower, nonzero rate for cached input. Sending the same log with 20 requests can count it as cached input 20 times. A single user instruction can generate several model requests. Check your account’s usage page for your remaining included allowance. [OpenAI’s guide to Codex usage and cached-input rates](https://learn.chatgpt.com/docs/pricing?codex-pricing-plans=individual#token-rates)
+
+- **You found the bug and only need a two-line fix.** Suppose the old logs occupy `60k` tokens and the reproduction steps and error summary occupy `5k`. Carrying those logs instead of the summary through the next 20 model requests adds `(60k − 5k) × 20 = 1.1M` input tokens. Even if this material is fully cached in both cases, an illustrative rate of `10 credits` per million cached input tokens puts that difference alone at `11 credits`. This excludes the work of generating the summary. Actual rates depend on the model and billing plan.
+- **You are migrating a protocol and still need to check every old field.** If the field table, callers, and failing assertions all matter to the next step, early compaction can lead to repeated reads. Temporarily move just the migration chat to `512k` and keep the release-notes chat at the model default. Once the migration passes, carry a short record of the decisions into the follow-up work.
+
+When the sidebar shows **20%**, about one fifth of the current chat’s context space remains. Check the Codex usage page for your account allowance. Standard monitoring helps you make these decisions. Verified experimental combinations can also change the window for an individual chat.
 
 ---
 
